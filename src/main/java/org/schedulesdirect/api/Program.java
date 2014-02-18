@@ -401,7 +401,7 @@ public class Program {
 				colorCode = ColorCode.UNKNOWN;
 			}
 		} catch (JSONException | ParseException e) {
-			throw new InvalidJsonObjectException(String.format("Program[%s]: failed to load!", id), e);
+			throw new InvalidJsonObjectException(String.format("Program[%s]: %s", id, e.getMessage()), e);
 		}
 	}
 
