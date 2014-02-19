@@ -85,12 +85,10 @@ public final class Config {
 	}
 	
 	private boolean debugOverrideActive;
-	private boolean captureZipResponses;
 	private String dateTimeFmt;
 	
 	private Config() {
 		debugOverrideActive = System.getenv("SDJSON_DEBUG") != null;
-		captureZipResponses = System.getenv("SDJSON_SAVE_SRV_ZIPS") != null;
 		dateTimeFmt = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 	}
 
@@ -122,18 +120,5 @@ public final class Config {
 	 * </p>
 	 * @return The current state of the debug override flag
 	 */
-	public boolean isDebugOverrideActive() { return debugOverrideActive; }
-	
-	/**
-	 * If true, all zip file responses from the Schedules Direct server are saved to disk.
-	 * 
-	 * <p>
-	 * During normal operation, the client simply processes all zip file responses from the SD
-	 * server in memory then discards the data stream.  When this debug flag is turned on, the
-	 * client will save all zip file responses to a zip file on disk.  This is used for development
-	 * and debugging of the client and should never be enabled in a production environment.
-	 * </p>
-	 * @return The current state of the capture zip debug flag
-	 */
-	public boolean isCaptureZipResponsesActive() { return captureZipResponses; }	
+	public boolean isDebugOverrideActive() { return debugOverrideActive; }	
 }

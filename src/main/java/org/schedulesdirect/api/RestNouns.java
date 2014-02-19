@@ -28,7 +28,7 @@ public final class RestNouns {
 	static public final String PROGRAMS = "programs";
 	static public final String LINEUPS = "lineups";
 	static public final String SCHEDULES = "schedules";
-	static public final String PLACEHOLDER = "foo";
+	static public final String MESSAGES = "messages";
 	
 	private RestNouns() {}
 }

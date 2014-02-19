@@ -53,8 +53,7 @@ public final class JsonRequest {
 		POST,
 		DELETE,
 		HEAD,
-		OPTIONS,
-		INVALID
+		OPTIONS
 	}
 		
 	private String baseUrl;

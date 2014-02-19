@@ -18,9 +18,6 @@ package org.schedulesdirect.api;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,15 +26,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.client.fluent.Request;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -505,10 +498,8 @@ public class NetworkEpgClient extends EpgClient {
 		
 	@Override
 	public void deleteMessage(final Message msg) throws IOException {
-		JsonRequest req = new JsonRequest(JsonRequest.Action.INVALID, RestNouns.PLACEHOLDER, getHash(), getUserAgent(), getBaseUrl());
-		JSONArray data = new JSONArray();
-		data.put(msg.getId());
-		JSONObject resp = req.submitForJson(data);
+		JsonRequest req = new JsonRequest(JsonRequest.Action.DELETE, String.format("%s/%s", RestNouns.MESSAGES, msg.getId()), getHash(), getUserAgent(), getBaseUrl());
+		JSONObject resp = req.submitForJson(null);
 		if(JsonResponseUtils.isErrorResponse(resp))
 			throw new IOException(resp.optString("message"));
 	}
