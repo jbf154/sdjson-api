@@ -262,7 +262,16 @@ public class Airing {
 			throw new IllegalArgumentException("An Airing's Program cannot be null!");
 		if(station == null)
 			throw new IllegalArgumentException("An Airing's Station cannot be null!");
+		program = prog;
+		this.station = station;
+
 		try {
+			id = src.getString("programID");
+			if(!program.getId().equals(id))
+				throw new IllegalArgumentException("Received Program does not match id of Airing!");
+			duration = Integer.parseInt(src.get("duration").toString());
+			gmtStart = Config.get().getDateTimeFormat().parse(src.getString("airDateTime"));
+
 			timeApproximate = src.optBoolean("timeApproximate");
 			subtitled = src.optBoolean("subtitled");
 			if(subtitled && src.has("subtitledLanguage"))
@@ -282,7 +291,6 @@ public class Airing {
 			closedCaptioned = src.optBoolean("cc");
 			stereo = src.optBoolean("stereo");
 			newAiring = src.optBoolean("new");
-			duration = Integer.parseInt(src.get("duration").toString());
 			suggestiveDialog = src.optBoolean("dialogRating");
 			totalParts = src.optInt("numberOfParts");
 			String dolby = src.optString("dolby", DolbyStatus.NONE.toString()).toUpperCase().replaceAll("\\.", "");
@@ -328,7 +336,6 @@ public class Airing {
 				LOG.warn(String.format("Unknown TvRating encountered! [%s]", rating));
 				tvRating = TvRating.UNKNOWN;
 			}
-			id = src.getString("programID");
 			fantasyViolenceContent = src.optBoolean("hasFantasyViolencerating");
 			String content = src.optString("netSyndicationType").toUpperCase().replace(' ', '_');
 			try {
@@ -342,17 +349,12 @@ public class Airing {
 			matureLanguage = src.optBoolean("hasLanguageRating");
 			descriptiveVideo = src.optBoolean("dvs");
 			is3d = src.optBoolean("is3d");
-			gmtStart = Config.get().getDateTimeFormat().parse(src.getString("airDateTime"));
 			broadcastLanguage = src.optString("programLanguage", null);
 		} catch(JSONException e) {
 			throw new InvalidJsonObjectException(e);
 		} catch(ParseException e) {
 			throw new InvalidJsonObjectException(e);
 		}
-		program = prog;
-		this.station = station;
-		if(!program.getId().equals(id))
-			throw new IllegalArgumentException("Received Program does not match id of Airing!");
 	}
 
 	/**

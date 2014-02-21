@@ -1,34 +1,34 @@
 package org.schedulesdirect.api;
 
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
+import org.apache.commons.logging.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
+import org.schedulesdirect.test.utils.Logging;
 import org.schedulesdirect.test.utils.SampleData;
 import org.schedulesdirect.test.utils.SampleData.SampleType;
 
-@PowerMockIgnore({"org.apache.http.*", "org.apache.log4j.*"})
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Program.class, Station.class})
+//@PowerMockIgnore({"org.apache.http.*", "org.apache.log4j.*"})
+//@RunWith(PowerMockRunner.class)
+//@PrepareForTest({Program.class, Station.class})
 public class AiringTest {
-
-	static public final List<String> SAMPLE_DATA = new ArrayList<String>();
+	static private final Log LOG = Logging.getLogger(AiringTest.class);
+	
+	static public final List<String> SAMPLE_DATA = new ArrayList<>();
+	static public final List<String> SAMPLE_AIRS = new ArrayList<>();
 
 	static private final Random RNG = new Random();
 
@@ -40,18 +40,18 @@ public class AiringTest {
 
 	@AfterClass
 	static public void cleanup() {
-		SAMPLE_DATA.clear();
+		SAMPLE_AIRS.clear();
 	}
 
 	static private void initJsonData() throws Exception {
 		try {
 			if(!SampleData.updateFor(SampleType.SCHEDULES, false));
-				//Reporter.log("Using current sample data because it's less than a week old.");
+				LOG.info("Using current sample data because it's less than a week old.");
 		} catch(Exception e) {
 			if(!SampleData.exists(SampleType.SCHEDULES))
 				throw new IOException("No sample data available!", e);
-//			else
-//				Reporter.log("Error downloading fresh sample data; using existing data instead!");
+			else
+				LOG.warn("Error downloading fresh sample data; using existing data instead!");
 		}
 		LineIterator itr = FileUtils.lineIterator(SampleData.locate(SampleType.SCHEDULES), "UTF-8");
 		while(itr.hasNext())
@@ -71,47 +71,81 @@ public class AiringTest {
 					Program p = mock(Program.class);
 					when(p.getId()).thenReturn(a.getString("programID"));
 					try {
-						new Airing(airings.getJSONObject(j), p, s);
+						JSONObject o = airings.getJSONObject(j);
+						new Airing(o, p, s);
+						SAMPLE_AIRS.add(o.toString());
 					} catch(InvalidJsonObjectException e) {
 						sb.append(String.format("\t(line %d:%d) %s: %s%n", i + 1, j, input.optString("programID", "<UNKNOWN>"), e.getMessage()));
-						SAMPLE_DATA.set(i, null);
 						++failed;
 					}
 				}
 		}
-//		if(failed > 0)
-//			Reporter.log(String.format("<pre>%n%d of %d samples (%s%%) failed to load!%n%s</pre>", failed, SAMPLE_DATA.size(), String.format("%.2f", 100.0F * failed / SAMPLE_DATA.size()), sb));
-//		else
-//			Reporter.log("No load failures!");
+		if(failed > 0)
+			LOG.warn(String.format("%d of %d samples (%s%%) failed to load!%n%s%n", failed, SAMPLE_DATA.size(), String.format("%.2f", 100.0F * failed / SAMPLE_DATA.size()), sb));
+		else if(LOG.isDebugEnabled())
+			LOG.debug("No load failures!");
 		if(failed >= SAMPLE_DATA.size() / 10)
 			throw new IOException("Too many load failures! Halting testing now.");
+		SAMPLE_DATA.clear();
 	}
 	
-	private String getRandomSampleProgram() {
-		String s = null;
-		while(s == null) s = SAMPLE_DATA.get(RNG.nextInt(SAMPLE_DATA.size()));
-		return s;
+	private String getRandomSample() {
+		return SAMPLE_AIRS.get(RNG.nextInt(SAMPLE_AIRS.size()));
 	}
 
 	
-	@Test
-	public void Airing() {
-		throw new RuntimeException("Test not implemented");
+	@Test(expected=IllegalArgumentException.class)
+	public void setNullId() {
+		JSONObject src = new JSONObject(getRandomSample());
+		Program p = mock(Program.class);
+		when(p.getId()).thenReturn(src.getString("programID"));
+		Station s = mock(Station.class);
+		Airing a = new Airing(src, p, s);
+		a.setId(null);
 	}
-/*
-	@Test
-	public void setId() {
-		throw new RuntimeException("Test not implemented");
+	
+	@Test(expected=IllegalArgumentException.class)
+	public void setNonMatchingId() {
+		JSONObject src = new JSONObject(getRandomSample());
+		Program p = mock(Program.class);
+		when(p.getId()).thenReturn(src.getString("programID"));
+		Station s = mock(Station.class);
+		Airing a = new Airing(src, p, s);
+		a.setId("foobar");
 	}
-
+	
+	@Test(expected=IllegalArgumentException.class)
+	public void setNullStation() {
+		JSONObject src = new JSONObject(getRandomSample());
+		Program p = mock(Program.class);
+		when(p.getId()).thenReturn(src.getString("programID"));
+		Station s = mock(Station.class);
+		Airing a = new Airing(src, p, s);
+		a.setStation(null);
+	}
+	
+	@Test(expected=IllegalArgumentException.class)
+	public void setNullProgram() {
+		JSONObject src = new JSONObject(getRandomSample());
+		Program p = mock(Program.class);
+		when(p.getId()).thenReturn(src.getString("programID"));
+		Station s = mock(Station.class);
+		Airing a = new Airing(src, p, s);
+		a.setProgram(null);
+	}
+	
 	@Test
 	public void setProgram() {
-		throw new RuntimeException("Test not implemented");
+		JSONObject src = new JSONObject(getRandomSample());
+		Program p = mock(Program.class);
+		when(p.getId()).thenReturn(src.getString("programID"));
+		Station s = mock(Station.class);
+		Airing a = new Airing(src, p, s);
+		p = mock(Program.class);
+		when(p.getId()).thenReturn("foobar");
+		assertEquals(src.getString("programID"), a.getId());
+		a.setProgram(p);
+		assertEquals("foobar", a.getId());
 	}
 
-	@Test
-	public void setStation() {
-		throw new RuntimeException("Test not implemented");
-	}
-*/
 }

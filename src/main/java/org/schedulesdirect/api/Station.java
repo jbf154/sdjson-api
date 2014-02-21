@@ -20,9 +20,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,21 +42,52 @@ import org.schedulesdirect.api.exception.InvalidJsonObjectException;
  *
  */
 public class Station {
+
+	static private final Pattern DIM_REGEX = Pattern.compile("(w|h)=(\\d+)px");
+	
+	// ele 0 == width; ele 1 == height
+	static private int[] extractLogoDimensions(String src) {
+		String data[] = src.split("\\|");
+		if(data.length != 2)
+			throw new IllegalArgumentException("Invalid dim data!");
+		int[] dim = new int[2];
+		for(String s : data) {
+			Matcher m = DIM_REGEX.matcher(s);
+			if(!m.matches())
+				throw new IllegalArgumentException("Invalid dim data!");
+			String d = m.group(1);
+			String i = m.group(2);
+			switch(d) {
+				case "w":
+					dim[0] = Integer.parseInt(i); break;
+				case "h":
+					dim[1] = Integer.parseInt(i); break;
+				default:
+					throw new IllegalArgumentException("Invalid dim data!");
+			}
+		}
+		if(dim[0] == 0 || dim[1] == 0)
+			throw new IllegalArgumentException("Invalid dim data!");
+		return dim;
+	}
+
 	public class Logo {
+				
 		private URL url;
 		private int width;
-		private int length;
-		private String md5;
-		private Date lastModified;
+		private int height;
+//		private String md5;
+//		private Date lastModified;
 		
 		Logo(JSONObject src) throws InvalidJsonObjectException {
 			try {
 				url = new URL(src.getString("URL"));
-				String[] dim = src.getString("dimension").split("x");
-				width = Integer.parseInt(dim[0]);
-				length = Integer.parseInt(dim[1]);
-				md5 = src.getString("md5");
-				lastModified = Config.get().getDateTimeFormat().parse(src.getString("modified"));
+				int[] dim = extractLogoDimensions(src.getString("dimension"));
+				width = dim[0];
+				height = dim[1];
+				//TMSBUG: Is the caching data removed permanently?
+//				md5 = src.getString("md5");
+//				lastModified = Config.get().getDateTimeFormat().parse(src.getString("modified"));
 			} catch (Throwable e) {
 				throw new InvalidJsonObjectException(e);
 			}
@@ -104,57 +136,24 @@ public class Station {
 			this.width = width;
 		}
 		/**
-		 * @return the length
+		 * @return the height
 		 */
-		public int getLength() {
-			return length;
+		public int getHeight() {
+			return height;
 		}
 		/**
-		 * @param length the length to set
+		 * @param height the height to set
 		 */
-		public void setLength(int length) {
-			this.length = length;
+		public void setLength(int height) {
+			this.height = height;
 		}
-		/**
-		 * @return the md5
-		 */
-		public String getMd5() {
-			return md5;
-		}
-		/**
-		 * @param md5 the md5 to set
-		 */
-		public void setMd5(String md5) {
-			this.md5 = md5;
-		}
-		/**
-		 * @return the lastModified
-		 */
-		public Date getLastModified() {
-			return lastModified;
-		}
-		/**
-		 * @param lastModified the lastModified to set
-		 */
-		public void setLastModified(Date lastModified) {
-			this.lastModified = lastModified;
-		}
-		/* (non-Javadoc)
+/* (non-Javadoc)
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
 		public String toString() {
-			StringBuilder builder = new StringBuilder();
-			builder.append("Logo [width=");
-			builder.append(width);
-			builder.append(", length=");
-			builder.append(length);
-			builder.append(", md5=");
-			builder.append(md5);
-			builder.append(", lastModified=");
-			builder.append(lastModified);
-			builder.append("]");
-			return builder.toString();
+			return "Logo [url=" + url + ", width=" + width + ", height="
+					+ height + "]";
 		}
 	}
 	
@@ -191,15 +190,15 @@ public class Station {
 			JSONObject o = src.getJSONObject("broadcaster");
 			broadcasterState = o.getString("state");
 			broadcasterCity = o.getString("city");
-			//TODO: Report bug: mixing postalcode and zipcode in station data
+			//TMSBUG: mixing postalcode and zipcode in station data
 			broadcasterZip = o.optString("zipcode", null);
 			if(broadcasterZip == null)
 				broadcasterZip = o.optString("postalcode", null);
 			if(broadcasterZip == null)
 				broadcasterZip = "00000";
 			broadcasterCountry = o.getString("country");
-			if(o.has("logo"))
-				logo = new Logo(o.getJSONObject("logo"));
+			if(src.has("logo"))
+				logo = new Logo(src.getJSONObject("logo"));
 			else
 				logo = null;
 			if(tuningDetails == null)
@@ -307,15 +306,7 @@ public class Station {
 	 * @return A user friendly logical channel number for this station (i.e. 5-2); applicable only for OTA stations; null otherwise
 	 */
 	public String getLogicalChannelNumber() {
-		StringBuilder sb = new StringBuilder();
-		if(atscMajorNumber > 0)
-			sb.append(atscMajorNumber);
-		if(atscMinorNumber > 0) {
-			if(sb.length() > 0)
-				sb.append("-");
-			sb.append(atscMinorNumber);
-		}
-		return sb.length() > 0 ? sb.toString() : null;
+		return atscMajorNumber > 0 && atscMinorNumber > 0 ? String.format("%d-%d", atscMajorNumber, atscMinorNumber) : null;
 	}
 
 	/**
