@@ -1,5 +1,5 @@
 /*
- *      Copyright 2012-2013 Battams, Derek
+ *      Copyright 2012-2014 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -28,12 +28,10 @@ public class InvalidJsonObjectException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
 	public InvalidJsonObjectException() {
-		// TODO Auto-generated constructor stub
 	}
 
 	public InvalidJsonObjectException(String message) {
 		super(message);
-		// TODO Auto-generated constructor stub
 	}
 
 	public InvalidJsonObjectException(Throwable cause) {

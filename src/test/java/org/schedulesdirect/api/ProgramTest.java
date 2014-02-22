@@ -33,12 +33,13 @@ import org.junit.Test;
 import org.schedulesdirect.api.Program.Credit;
 import org.schedulesdirect.api.Program.Role;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
+import org.schedulesdirect.test.SdjsonTestSuite;
 import org.schedulesdirect.test.TestConfig;
 import org.schedulesdirect.test.utils.Logging;
 import org.schedulesdirect.test.utils.SampleData;
 import org.schedulesdirect.test.utils.SampleData.SampleType;
 
-public class ProgramTest {
+public class ProgramTest extends SdjsonTestSuite {
 	static private final Log LOG = Logging.getLogger(ProgramTest.class);
 	
 	static public final String OBJ_TITLES = "titles";

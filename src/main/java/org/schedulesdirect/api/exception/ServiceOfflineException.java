@@ -1,5 +1,5 @@
 /*
- *      Copyright 2013 Battams, Derek
+ *      Copyright 2013-2014 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ public final class ServiceOfflineException extends Exception {
 	 */
 	public ServiceOfflineException(String message) {
 		super(message);
-		// TODO Auto-generated constructor stub
 	}
 
 	/**
@@ -40,6 +39,5 @@ public final class ServiceOfflineException extends Exception {
 	 */
 	public ServiceOfflineException(Throwable cause) {
 		super(cause);
-		// TODO Auto-generated constructor stub
 	}
 }

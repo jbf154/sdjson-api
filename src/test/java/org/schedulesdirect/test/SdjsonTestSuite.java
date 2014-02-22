@@ -1,5 +1,5 @@
 /*
- *      Copyright 2012-2014 Battams, Derek
+ *      Copyright 2014 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -13,31 +13,10 @@
  *       See the License for the specific language governing permissions and
  *       limitations under the License.
  */
-package org.schedulesdirect.api.exception;
+package org.schedulesdirect.test;
 
-/**
- * Represents an exception that is thrown as a result of a failed authroization attempt with the Schedules Direct service
- * @author Derek Battams &lt;derek@battams.ca&gt;
- *
- */
-public final class InvalidCredentialsException extends Exception {
+import org.schedulesdirect.test.utils.Logging;
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-
-	/**
-	 * @param message
-	 */
-	public InvalidCredentialsException(String message) {
-		super(message);
-	}
-
-	/**
-	 * @param cause
-	 */
-	public InvalidCredentialsException(Throwable cause) {
-		super(cause);
-	}
+public abstract class SdjsonTestSuite {
+	static { Logging.init(); }
 }
