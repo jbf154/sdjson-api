@@ -89,8 +89,8 @@ public class Lineup {
 		if(!detailsFetched) {
 			stationMap = new HashMap<String, List<String>>();
 			physicalStationMap = new HashMap<String, List<String>>();
-			JSONObject resp = epgClnt.fetchChannelMapping(this);
 			try {
+				JSONObject resp = new JSONObject(epgClnt.fetchChannelMapping(this));
 				channelMap = resp.getJSONArray("map");
 				Map<Integer, JSONObject> tuningData = getTuningData(resp.getJSONArray("map"));
 				fillStations(resp.getJSONArray("stations"), tuningData);

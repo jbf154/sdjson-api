@@ -159,20 +159,21 @@ public class NetworkEpgClient extends EpgClient {
 	 * @throws IOException Thrown on any IO error communicating with the Schedules Direct servers
 	 * @throws ServiceOfflineException Thrown if the web service reports itself as offline/unavailable
 	 */
-	@SuppressWarnings("deprecation")
 	protected void authorize() throws InvalidCredentialsException, IOException, ServiceOfflineException {
 		JSONObject creds = new JSONObject();
+		creds.put("username", id);
+		/*
+		 *  Using the deprecated shaHex() b/c some people still use very old
+		 *  version of commons-codec; SageTV being an example
+		 */			
+		creds.put("password", DigestUtils.shaHex(password));
+
+		JSONObject resp;
 		try {
-			creds.put("username", id);
-			/*
-			 *  Using the deprecated shaHex() b/c some people still use very old
-			 *  version of commons-codec; SageTV being an example
-			 */			
-			creds.put("password", DigestUtils.shaHex(password));
+			resp = new JSONObject(new JsonRequest(JsonRequest.Action.POST, RestNouns.LOGIN_TOKEN, hash, getUserAgent(), baseUrl).submitForJson(creds));
 		} catch(JSONException e) {
-			throw new RuntimeException(e);
+			throw new IOException(e);
 		}
-		JSONObject resp = new JsonRequest(JsonRequest.Action.POST, RestNouns.LOGIN_TOKEN, hash, getUserAgent(), baseUrl).submitForJson(creds);
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
 			try {
 				hash = resp.getString("token");
@@ -190,7 +191,13 @@ public class NetworkEpgClient extends EpgClient {
 	 * @throws IOException On any IO error, including an error response from the server
 	 */
 	protected void initStatusObjects() throws IOException {
-		JSONObject resp = new JsonRequest(JsonRequest.Action.GET, RestNouns.STATUS, hash, getUserAgent(), baseUrl).submitForJson(null);
+		JSONObject resp;
+		try {
+			resp = new JSONObject(new JsonRequest(JsonRequest.Action.GET, RestNouns.STATUS, hash, getUserAgent(), baseUrl).submitForJson(null));
+		} catch(JSONException e) {
+			throw new IOException(e);
+		}
+		
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
 			userStatus = new UserStatus(resp, id, this);
 			try {
@@ -212,7 +219,13 @@ public class NetworkEpgClient extends EpgClient {
 	@Override
 	public Lineup[] getLineups() throws IOException {
 		Lineup[] list = null;
-		JSONObject resp = new JsonRequest(JsonRequest.Action.GET, RestNouns.LINEUPS, hash, getUserAgent(), baseUrl).submitForJson(null);
+		JSONObject resp;
+		try {
+			resp = new JSONObject(new JsonRequest(JsonRequest.Action.GET, RestNouns.LINEUPS, hash, getUserAgent(), baseUrl).submitForJson(null));
+		} catch(JSONException e) {
+			throw new IOException(e);
+		}
+		
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
 			try {
 				JSONArray lineups = resp.getJSONArray("lineups");
@@ -236,7 +249,13 @@ public class NetworkEpgClient extends EpgClient {
 	@Override
 	protected Lineup[] searchForLineups(final String location, final String zip) throws IOException {
 		List<Lineup> hes = new ArrayList<Lineup>();
-		JSONObject resp = new JsonRequest(JsonRequest.Action.GET, String.format("%s?country=%s&postalcode=%s", RestNouns.HEADENDS, URLEncoder.encode(location, "UTF-8"), URLEncoder.encode(zip, "UTF-8")), hash, getUserAgent(), baseUrl).submitForJson(null);
+		JSONObject resp;
+		try {
+			resp = new JSONObject(new JsonRequest(JsonRequest.Action.GET, String.format("%s?country=%s&postalcode=%s", RestNouns.HEADENDS, URLEncoder.encode(location, "UTF-8"), URLEncoder.encode(zip, "UTF-8")), hash, getUserAgent(), baseUrl).submitForJson(null));			
+		} catch(JSONException e) {
+			throw new IOException(e);
+		}
+		
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
 			try {
 				@SuppressWarnings("unchecked")
@@ -499,7 +518,13 @@ public class NetworkEpgClient extends EpgClient {
 	@Override
 	public void deleteMessage(final Message msg) throws IOException {
 		JsonRequest req = new JsonRequest(JsonRequest.Action.DELETE, String.format("%s/%s", RestNouns.MESSAGES, msg.getId()), getHash(), getUserAgent(), getBaseUrl());
-		JSONObject resp = req.submitForJson(null);
+		JSONObject resp;
+		try {
+			resp = new JSONObject(req.submitForJson(null));	
+		} catch(JSONException e) {
+			throw new IOException(e);
+		}
+		
 		if(JsonResponseUtils.isErrorResponse(resp))
 			throw new IOException(resp.optString("message"));
 	}
@@ -519,7 +544,13 @@ public class NetworkEpgClient extends EpgClient {
 	@Override
 	public int registerLineup(final Lineup l) throws IOException {
 		JsonRequest req = new JsonRequest(Action.PUT, l.getUri(), getHash(), getUserAgent(), getBaseUrl());
-		JSONObject resp = req.submitForJson(null);
+		JSONObject resp;
+		try {
+			resp = new JSONObject(req.submitForJson(null));	
+		} catch(JSONException e) {
+			throw new IOException(e);
+		}
+		
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
 			try {
 				return resp.getInt("changesRemaining");
@@ -533,7 +564,13 @@ public class NetworkEpgClient extends EpgClient {
 	@Override
 	public int unregisterLineup(final Lineup l) throws IOException {
 		JsonRequest req = new JsonRequest(Action.DELETE, l.getUri(), getHash(), getUserAgent(), getBaseUrl());
-		JSONObject resp = req.submitForJson(null);
+		JSONObject resp;
+		try {
+			resp = new JSONObject(req.submitForJson(null));
+		} catch(JSONException e) {
+			throw new IOException(e);
+		}
+		
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
 			try {
 				return resp.getInt("changesRemaining");
@@ -545,12 +582,18 @@ public class NetworkEpgClient extends EpgClient {
 	}
 	
 	@Override
-	protected JSONObject fetchChannelMapping(Lineup lineup) throws IOException {
+	protected String fetchChannelMapping(Lineup lineup) throws IOException {
 		return new JsonRequest(Action.GET, lineup.getUri(), getHash(), getUserAgent(), getBaseUrl()).submitForJson(null);
 	}
 	
 	@Override
 	public Lineup getLineupByUriPath(String path) throws IOException {
-		return parseLineupResponse(new JsonRequest(Action.GET, UriUtils.stripApiVersion(path), getHash(), getUserAgent(), getBaseUrl()).submitForJson(null));
+		JSONObject resp;
+		try {
+			resp = new JSONObject(new JsonRequest(Action.GET, UriUtils.stripApiVersion(path), getHash(), getUserAgent(), getBaseUrl()).submitForJson(null));
+		} catch(JSONException e) {
+			throw new IOException(e);
+		}
+		return parseLineupResponse(resp);
 	}
 }

@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
-import org.json.JSONObject;
 
 /**
  * An EpgClient provides access to Schedules Direct JSON feed data.
@@ -140,10 +139,10 @@ public abstract class EpgClient {
 	/**
 	 * Fetch the channel mapping for the given Linup object
 	 * @param lineup The lineup to fetch channel mappings for
-	 * @return The JSON response received from upstream
+	 * @return The JSON encoded response received from upstream
 	 * @throws IOException On any IO error
 	 */
-	abstract protected JSONObject fetchChannelMapping(final Lineup lineup) throws IOException;
+	abstract protected String fetchChannelMapping(final Lineup lineup) throws IOException;
 	
 	/**
 	 * Fetch a Station's logo object

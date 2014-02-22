@@ -404,9 +404,9 @@ public class ZipEpgClient extends EpgClient {
 	}
 
 	@Override
-	protected JSONObject fetchChannelMapping(Lineup lineup) throws IOException {
+	protected String fetchChannelMapping(Lineup lineup) throws IOException {
 		try(InputStream ins = Files.newInputStream(vfs.getPath("maps", ZipEpgClient.scrubFileName(String.format("%s.txt", lineup.getId()))))) {
-			return new JSONObject(IOUtils.toString(ins, ZipEpgClient.ZIP_CHARSET.toString()));
+			return new JSONObject(IOUtils.toString(ins, ZipEpgClient.ZIP_CHARSET.toString())).toString();
 		}
 	}
 }

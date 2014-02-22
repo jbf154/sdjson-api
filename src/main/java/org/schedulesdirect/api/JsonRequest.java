@@ -29,10 +29,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.DecompressingHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.schedulesdirect.api.Config;
-import org.schedulesdirect.api.EpgClient;
 
 /**
  * Encapsulates a request being sent to the Schedules Direct JSON service.
@@ -116,16 +112,12 @@ public final class JsonRequest {
 	/**
 	 * Submit this request; returns the JSON object response received; only call if the request is expected to return a JSON object in response
 	 * @param reqData The supporting data for the request; this is dependent on the action and obj target specified
-	 * @return The JSON object response received from the SD service
+	 * @return The JSON encoded response received from the SD service
 	 * @throws IOException Thrown on any IO error encountered
 	 */
-	public JSONObject submitForJson(Object reqData) throws IOException {
+	public String submitForJson(Object reqData) throws IOException {
 		try(InputStream ins = submitRaw(reqData)) {
-			try {
-				return new JSONObject(IOUtils.toString(ins, "UTF-8"));
-			} catch (JSONException e) {
-				throw new IOException(e);
-			}
+			return IOUtils.toString(ins, "UTF-8");
 		}
 	}
 
