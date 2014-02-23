@@ -1,5 +1,5 @@
 /*
- *      Copyright 2012-2013 Battams, Derek
+ *      Copyright 2012-2014 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class UserStatus {
 	private Date nextSuggestedConnectTime;
 	private Message[] userMessages;
 	private Message[] systemMessages;
-	private Map<String, Date> headendInfo;
+	private Map<String, Date> lineupInfo;
 	private String jsonEncoding;
 	private int maxLineups;
 
@@ -80,11 +80,11 @@ public class UserStatus {
 			systemMessages = new Message[msgs.length()];
 			for(int i = 0; i < msgs.length(); ++i)
 				systemMessages[i] = new Message(msgs.getJSONObject(i), clnt);
-			headendInfo = new HashMap<String, Date>();
+			lineupInfo = new HashMap<String, Date>();
 			msgs = src.getJSONArray("lineups");
 			for(int i = 0; i < msgs.length(); ++i) {
-				JSONObject heInfo = msgs.getJSONObject(i);
-				headendInfo.put(heInfo.getString("ID"), fmt.parse(heInfo.getString("modified")));
+				JSONObject lineupInfo = msgs.getJSONObject(i);
+				this.lineupInfo.put(lineupInfo.getString("ID"), fmt.parse(lineupInfo.getString("modified")));
 			}
 			maxLineups = acct.getInt("maxLineups");
 			JSONObject clone = new JSONObject(src.toString());
@@ -157,8 +157,8 @@ public class UserStatus {
 		builder.append(", systemMessages=");
 		builder.append(systemMessages != null ? Arrays.asList(systemMessages)
 				.subList(0, Math.min(systemMessages.length, maxLen)) : null);
-		builder.append(", headendInfo=");
-		builder.append(headendInfo != null ? toString(headendInfo.entrySet(),
+		builder.append(", lineupInfo=");
+		builder.append(lineupInfo != null ? toString(lineupInfo.entrySet(),
 				maxLen) : null);
 		builder.append(", jsonEncoding=");
 		builder.append(jsonEncoding);
@@ -183,12 +183,12 @@ public class UserStatus {
 	}
 
 	/**
-	 * @return the headendInfo
+	 * @return the lineupInfo
 	 */
-	public Map<String, Date> getHeadendInfo() {
+	public Map<String, Date> getLineupInfo() {
 		Map<String, Date> map = new HashMap<String, Date>();
-		for(String k : headendInfo.keySet())
-			map.put(k, (Date)headendInfo.get(k).clone());
+		for(String k : lineupInfo.keySet())
+			map.put(k, (Date)lineupInfo.get(k).clone());
 		return map;
 	}
 
