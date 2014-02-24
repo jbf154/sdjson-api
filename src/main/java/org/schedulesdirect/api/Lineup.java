@@ -66,7 +66,7 @@ public class Lineup {
 	 * @param uri The URI where the remaining details of this lineup can be found
 	 * @param clnt The EpgClient instance this object is to be attached to
 	 */
-	Lineup(String name, String location, String uri, String type, EpgClient clnt) {
+	Lineup(final String name, final String location, final String uri, final String type, final EpgClient clnt) {
 		this.stationMap = null;
 		this.physicalStationMap = null;
 		this.stations = null;
@@ -82,17 +82,38 @@ public class Lineup {
 	}
 	
 	/**
-	 * 
-	 * @throws IOException
+	 * Fill in the details of this Lineup object
+	 * <p>
+	 *  You must call this method before calling any of the object's accessor
+	 *  methods.  The Lineup object is built in a JIT manner.
+	 * </p>
+	 * <p>
+	 * 	Until this method is called, a Lineup object only contains minimal data
+	 *  to help identify the lineup it represents.  Since most of the details of a Lineup
+	 *  are gathered thru the construction of other objects, their construction is
+	 *  relatively expensive and is therefore implemented in a JIT manner.  EpgClients
+	 *  that are accessing data from a local cache (i.e. ZipEpgClient) can usually safely
+	 *  call this method with fetchAirings=true whereas EpgClients hitting the remote
+	 *  Schedules Direct servers to fill this object in will probably want to do it on
+	 *  demand unless you know you need access to all the airings in all the lineup's
+	 *  stations.  Either way, building a complete Lineup object over the network is going
+	 *  to be very slow; even slowing if you request all airings to be pulled down as well.
+	 *  
+	 *  Even ZipEpgClient should avoid pulling in all Airings for a Lineup unless you know
+	 *  you're going to need them all.  Even with a local cache, building up the complete
+	 *  Lineup with all metadata and airings is still very expensive.
+	 * </p>
+	 * @param fetchAirings If true, all Stations will fill in their Airings as well, otherwise Stations will fill Airings in as needed
+	 * @throws IOException On any IO error
 	 */
-	public void fetchDetails(boolean fetchAirings) throws IOException {
+	public void fetchDetails(final boolean fetchAirings) throws IOException {
 		if(!detailsFetched) {
 			stationMap = new HashMap<String, List<String>>();
 			physicalStationMap = new HashMap<String, List<String>>();
 			try {
 				JSONObject resp = new JSONObject(epgClnt.fetchChannelMapping(this));
 				channelMap = resp.getJSONArray("map");
-				Map<Integer, JSONObject> tuningData = getTuningData(resp.getJSONArray("map"));
+				Map<String, JSONObject> tuningData = getTuningData(resp.getJSONArray("map"));
 				fillStations(resp.getJSONArray("stations"), tuningData);
 				fillMetadata(resp.getJSONObject("metadata"));
 				if(physicalMapping)
@@ -106,27 +127,31 @@ public class Lineup {
 		}
 		
 		if(fetchAirings && !airingsFetched) {
-			epgClnt.fetchSchedules(this);
+			Map<Station, Airing[]> map = epgClnt.fetchSchedules(this);
+			for(Station s : map.keySet()) {
+				Airing[] a = map.get(s);
+				stations.get(s.getId()).setAirings(a);
+			}
 			airingsFetched = true;
 		}
 	}
 		
-	private void fillMetadata(JSONObject data) throws JSONException, ParseException {
+	private void fillMetadata(final JSONObject data) throws JSONException, ParseException {
 		lastModified = Config.get().getDateTimeFormat().parse(data.getString("modified"));
 	}
 	
-	private Map<Integer, JSONObject> getTuningData(final JSONArray data) throws JSONException {
-		Map<Integer, JSONObject> result = new HashMap<Integer, JSONObject>();
+	private Map<String, JSONObject> getTuningData(final JSONArray data) throws JSONException {
+		Map<String, JSONObject> result = new HashMap<>();
 		for(int i = 0; i < data.length(); ++i) {
 			JSONObject o = data.getJSONObject(i);
-			result.put(o.getInt("stationID"), o);
+			result.put(o.getString("stationID"), o);
 			if(o.has("uhfVhf"))
 				physicalMapping = true;
 		}
 		return result;
 	}
 	
-	private void fillStations(final JSONArray stationsArray, final Map<Integer, JSONObject> tuningData) throws JSONException {
+	private void fillStations(final JSONArray stationsArray, final Map<String, JSONObject> tuningData) throws JSONException {
 		stations = new HashMap<String, Station>();
 		for(int i = 0; i < stationsArray.length(); ++i) {
 			JSONObject s = stationsArray.getJSONObject(i);
@@ -240,7 +265,7 @@ public class Lineup {
 	 * @param stationId The station id to fetch
 	 * @return The Station object for the given station id or null if it's not available
 	 */
-	public Station getStation(String stationId) {
+	public Station getStation(final String stationId) {
 		if(channelMap == null)
 			throw new IllegalStateException("Must call fetchDetails() before calling this method!");
 		return stations.get(stationId);

@@ -16,12 +16,9 @@
 package org.schedulesdirect.api;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-
-import org.apache.commons.io.IOUtils;
 
 /**
  * An EpgClient provides access to Schedules Direct JSON feed data.
@@ -43,7 +40,7 @@ public abstract class EpgClient {
 	 * Name of the zip file entry containing the processing server
 	 */
 	static public final String SERVER_ID_ENTRY = "serverID.txt";
-
+	
 	private String userAgent;
 	
 	/**
@@ -159,16 +156,8 @@ public abstract class EpgClient {
 	 * @throws IOException Thrown on any IO error
 	 */
 	protected void writeLogoToFile(final Station station, final File dest) throws IOException {
-		InputStream ins = fetchLogoStream(station);
-		FileOutputStream outs = null;
-		if(ins != null) {
-			try {
-				outs = new FileOutputStream(dest);
-				IOUtils.copy(ins, outs);
-			} finally {
-				try { if(outs != null) outs.close(); } catch(IOException e) {}
-				try { if(ins != null) ins.close(); } catch(IOException e) {}
-			}
+		try(InputStream ins = fetchLogoStream(station)) {
+			EpgClientHelper.writeLogoToFile(ins, dest);
 		}
 	}
 	

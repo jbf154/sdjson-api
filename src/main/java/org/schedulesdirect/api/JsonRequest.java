@@ -58,7 +58,7 @@ public final class JsonRequest {
 	private String targetUrl;
 	private String resource;
 	private Action action;
-	private boolean valid = true;
+	private boolean valid;
 	
 	/**
 	 * Constructor
@@ -74,6 +74,7 @@ public final class JsonRequest {
 		this.resource = resource;
 		this.baseUrl = String.format("%s/%s/%s", baseUrl != null ? baseUrl : Config.DEFAULT_BASE_URL, EpgClient.API_VERSION, this.resource);
 		this.action = action;
+		valid = true;
 	}
 
 	/**
