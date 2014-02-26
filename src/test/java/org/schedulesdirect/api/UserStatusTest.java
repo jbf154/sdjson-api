@@ -15,33 +15,22 @@
  */
 package org.schedulesdirect.api;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import java.text.DateFormat;
 import java.util.Date;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.schedulesdirect.test.SdjsonTestSuite;
+import org.schedulesdirect.test.utils.JsonResponseBuilder;
 
 public class UserStatusTest extends SdjsonTestSuite {
 	
-	static private UserStatus build(Date d) {
-		final DateFormat fmt = Config.get().getDateTimeFormat();
-		JSONObject o = new JSONObject();
-		o.put("lastServerRefresh", fmt.format(d));
-		o.put("notifications", new JSONArray());
-		o.put("lineups", new JSONArray());
-		o.put("lastDataUpdate", fmt.format(d));
-		JSONObject acct = new JSONObject();
-		acct.put("expires", fmt.format(d));
-		acct.put("maxLineups", 4);
-		acct.put("messages", new JSONArray());
-		acct.put("nextSuggestedConnectTime", fmt.format(d));
-		o.put("account", acct);
-		return new UserStatus(o, "fake", mock(EpgClient.class));		
+	static public UserStatus build(Date d) {
+		return new UserStatus(new JSONObject(JsonResponseBuilder.buildStatusResponse(d)), "fake", mock(EpgClient.class));	
 	}
 	
 	@Test

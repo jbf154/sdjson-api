@@ -34,9 +34,12 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.schedulesdirect.api.JsonRequest.Action;
 import org.schedulesdirect.api.exception.InvalidCredentialsException;
 import org.schedulesdirect.api.exception.ServiceOfflineException;
+import org.schedulesdirect.api.json.IJsonRequestFactory;
+import org.schedulesdirect.api.json.JsonRequest;
+import org.schedulesdirect.api.json.JsonRequestFactory;
+import org.schedulesdirect.api.json.JsonRequest.Action;
 import org.schedulesdirect.api.utils.JsonResponseUtils;
 import org.schedulesdirect.api.utils.UriUtils;
 
@@ -102,6 +105,7 @@ public class NetworkEpgClient extends EpgClient {
 	private String baseUrl;
 	private boolean useCache;
 	private SystemStatus systemStatus;
+	private IJsonRequestFactory factory;
 
 	/**
 	 * Constructor
@@ -111,7 +115,20 @@ public class NetworkEpgClient extends EpgClient {
 	 * @throws IOException Thrown if there is any IO error communicating with the Schedules Direct servers
 	 */
 	public NetworkEpgClient(final String id, final String pwd) throws InvalidCredentialsException, IOException, ServiceOfflineException {
-		this(id, pwd, null, null, true);
+		this(id, pwd, null, null, true, JsonRequestFactory.get());
+	}
+
+	/**
+	 * ctor; typically only used for development & testing; allows overriding of JsonRequestFactory instance 
+	 * @param id
+	 * @param pwd
+	 * @param factory
+	 * @throws InvalidCredentialsException
+	 * @throws IOException
+	 * @throws ServiceOfflineException
+	 */
+	public NetworkEpgClient(final String id, final String pwd, IJsonRequestFactory factory) throws InvalidCredentialsException, IOException, ServiceOfflineException {
+		this(id, pwd, null, null, true, factory);
 	}
 
 	/**
@@ -124,9 +141,23 @@ public class NetworkEpgClient extends EpgClient {
 	 * @throws ServiceOfflineException Thrown if the web service reports itself as offline/unavailable
 	 */
 	public NetworkEpgClient(final String id, final String pwd, final String userAgent) throws InvalidCredentialsException, IOException, ServiceOfflineException {
-		this(id, pwd, userAgent, null, true);
+		this(id, pwd, userAgent, null, true, JsonRequestFactory.get());
 	}
-	
+
+	/**
+	 * ctor; typically only used for development & testing; allows overriding of JsonRequestFactory instance
+	 * @param id
+	 * @param pwd
+	 * @param userAgent
+	 * @param factory
+	 * @throws InvalidCredentialsException
+	 * @throws IOException
+	 * @throws ServiceOfflineException
+	 */
+	public NetworkEpgClient(final String id, final String pwd, final String userAgent, IJsonRequestFactory factory) throws InvalidCredentialsException, IOException, ServiceOfflineException {
+		this(id, pwd, userAgent, null, true, factory);
+	}
+
 	/**
 	 * Constructor
 	 * @param id The Schedules Direct username to authorize with
@@ -134,12 +165,30 @@ public class NetworkEpgClient extends EpgClient {
 	 * @param userAgent The user agent to send on all requests to the SD servers
 	 * @param baseUrl The base URL to use for all HTTP communication; most should not set this value as it is for testing and development only!
 	 * @param useCache Should the client instance maintain a cache of created objects or hit the SD server on every request?  Though memory intensive, use of the cache is greatly encouraged!
+	 * @param factory The JsonRequestFactory to be used for this client to generate network requests
 	 * @throws InvalidCredentialsException Thrown if the given credentials were invalid
 	 * @throws IOException Thrown if there is any IO error communicating with the Schedules Direct servers	 
 	 * @throws ServiceOfflineException Thrown if the web service reports itself as offline/unavailable
 	 */
 	public NetworkEpgClient(final String id, final String pwd, final String userAgent, final String baseUrl, final boolean useCache) throws InvalidCredentialsException, IOException, ServiceOfflineException {
+		this(id, pwd, userAgent, baseUrl, useCache, JsonRequestFactory.get());
+	}
+
+	/**
+	 * Constructor
+	 * @param id The Schedules Direct username to authorize with
+	 * @param pwd The Schedules Direct password to authorize with
+	 * @param userAgent The user agent to send on all requests to the SD servers
+	 * @param baseUrl The base URL to use for all HTTP communication; most should not set this value as it is for testing and development only!
+	 * @param useCache Should the client instance maintain a cache of created objects or hit the SD server on every request?  Though memory intensive, use of the cache is greatly encouraged!
+	 * @param factory The JsonRequestFactory to be used for this client to generate network requests
+	 * @throws InvalidCredentialsException Thrown if the given credentials were invalid
+	 * @throws IOException Thrown if there is any IO error communicating with the Schedules Direct servers	 
+	 * @throws ServiceOfflineException Thrown if the web service reports itself as offline/unavailable
+	 */
+	public NetworkEpgClient(final String id, final String pwd, final String userAgent, final String baseUrl, final boolean useCache, final IJsonRequestFactory factory) throws InvalidCredentialsException, IOException, ServiceOfflineException {
 		super(userAgent);
+		this.factory = factory;
 		if(id == null || id.length() == 0)
 			throw new InvalidCredentialsException("Schedules Direct username cannot be empty!");
 		if(pwd == null || pwd.length() == 0)
@@ -153,6 +202,12 @@ public class NetworkEpgClient extends EpgClient {
 		authorize();
 	}
 
+	/**
+	 * Get the JsonRequestFactory implementation being used by this client
+	 * @return The factory implementation
+	 */
+	public IJsonRequestFactory getJsonRequestFactory() { return factory; }
+	
 	/**
 	 * Perform user authorization with Schedules Direct
 	 * @throws InvalidCredentialsException Thrown if authorization failed
@@ -170,7 +225,7 @@ public class NetworkEpgClient extends EpgClient {
 
 		JSONObject resp;
 		try {
-			resp = new JSONObject(new JsonRequest(JsonRequest.Action.POST, RestNouns.LOGIN_TOKEN, hash, getUserAgent(), baseUrl).submitForJson(creds));
+			resp = new JSONObject(factory.get(JsonRequest.Action.POST, RestNouns.LOGIN_TOKEN, hash, getUserAgent(), baseUrl).submitForJson(creds));
 		} catch(JSONException e) {
 			throw new IOException(e);
 		}
@@ -193,7 +248,7 @@ public class NetworkEpgClient extends EpgClient {
 	protected void initStatusObjects() throws IOException {
 		JSONObject resp;
 		try {
-			resp = new JSONObject(new JsonRequest(JsonRequest.Action.GET, RestNouns.STATUS, hash, getUserAgent(), baseUrl).submitForJson(null));
+			resp = new JSONObject(factory.get(JsonRequest.Action.GET, RestNouns.STATUS, hash, getUserAgent(), baseUrl).submitForJson(null));
 		} catch(JSONException e) {
 			throw new IOException(e);
 		}
@@ -221,7 +276,7 @@ public class NetworkEpgClient extends EpgClient {
 		Lineup[] list = null;
 		JSONObject resp;
 		try {
-			resp = new JSONObject(new JsonRequest(JsonRequest.Action.GET, RestNouns.LINEUPS, hash, getUserAgent(), baseUrl).submitForJson(null));
+			resp = new JSONObject(factory.get(JsonRequest.Action.GET, RestNouns.LINEUPS, hash, getUserAgent(), baseUrl).submitForJson(null));
 		} catch(JSONException e) {
 			throw new IOException(e);
 		}
@@ -251,7 +306,7 @@ public class NetworkEpgClient extends EpgClient {
 		List<Lineup> hes = new ArrayList<Lineup>();
 		JSONObject resp;
 		try {
-			resp = new JSONObject(new JsonRequest(JsonRequest.Action.GET, String.format("%s?country=%s&postalcode=%s", RestNouns.HEADENDS, URLEncoder.encode(location, "UTF-8"), URLEncoder.encode(zip, "UTF-8")), hash, getUserAgent(), baseUrl).submitForJson(null));			
+			resp = new JSONObject(factory.get(JsonRequest.Action.GET, String.format("%s?country=%s&postalcode=%s", RestNouns.HEADENDS, URLEncoder.encode(location, "UTF-8"), URLEncoder.encode(zip, "UTF-8")), hash, getUserAgent(), baseUrl).submitForJson(null));			
 		} catch(JSONException e) {
 			throw new IOException(e);
 		}
@@ -324,7 +379,7 @@ public class NetworkEpgClient extends EpgClient {
 	 * @throws IOException On any error
 	 */
 	public InputStream submitRequest(final JsonRequest req, final Object data) throws IOException {
-		JsonRequest scrubbedReq = new JsonRequest(req.getAction(), req.getResource(), getHash(), getUserAgent(), getBaseUrl());
+		JsonRequest scrubbedReq = factory.get(req.getAction(), req.getResource(), getHash(), getUserAgent(), getBaseUrl());
 		return scrubbedReq.submitForInputStream(data);
 	}
 	
@@ -338,64 +393,22 @@ public class NetworkEpgClient extends EpgClient {
 			JSONArray ids = new JSONArray();
 			ids.put(station.getId());
 			JSONObject reqObj = new JSONObject();
-			try {
-				reqObj.put("request", ids);
-			} catch (JSONException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			JsonRequest req = new JsonRequest(Action.POST, RestNouns.SCHEDULES, hash, getUserAgent(), baseUrl);
+			reqObj.put("request", ids);
+			JsonRequest req = factory.get(Action.POST, RestNouns.SCHEDULES, hash, getUserAgent(), baseUrl);
 			InputStream ins = req.submitForInputStream(reqObj);
+			@SuppressWarnings("unchecked")
 			List<String> input = IOUtils.readLines(ins);
 			for(String obj : input) {
-				//JSONObject o = new JSONObject(obj);
+				JSONObject o = new JSONObject(obj);
+				if(!JsonResponseUtils.isErrorResponse(o)) {
+					JSONArray progs = o.getJSONArray("programs");
+					for(int i = 0; i < progs.length(); ++i) {
+						JSONObject p = progs.getJSONObject(i);
+						if(!JsonResponseUtils.isErrorResponse(p))
+							schedList.add(new Airing(p, fetchProgram(p.getString("programID")), station));
+					}
+				}
 			}
-			
-//			if(!Utils.isErrorResponse(resp)) {
-//				String url;
-//				try {
-//					url = resp.getString("URL");
-//				} catch(JSONException e) {
-//					throw new IOException(e);
-//				}
-//				ZipInputStream data = new ZipInputStream(Request.Get(url).execute().returnContent().asStream());
-//				ZipEntry ze;
-//				final String EMPTY_ARRAY = new JSONArray().toString();
-//				while((ze = data.getNextEntry()) != null) {
-//					String key = ze.getName();
-//					if("serverID.txt".equals(key)) {
-//						LOG.debug(String.format("Request '%s' handled by %s", req.getTargetUrl(), IOUtils.toString(data, "UTF-8")));
-//						continue;
-//					}
-//					key = key.substring(0, key.indexOf('.')).substring(6); // Remove prefix: sched_
-//					if(key.equals(station.getId())) {
-//						String input = null;
-//						JSONArray jarr = null;
-//						try {
-//							input = IOUtils.toString(data, "UTF-8");
-//							if(input.length() == 0) {
-//								input = EMPTY_ARRAY.toString();
-//								LOG.warn(String.format("%s: Received empty response!", key));
-//							}
-//							jarr = new JSONArray(input);
-//							for(int i = 0; i < jarr.length(); ++i) {
-//								JSONObject o = jarr.getJSONObject(i);
-//								Program p = fetchProgram(o.getString("prog_id"));
-//								schedList.add(new Airing(o, p, station));
-//							}
-//							sched = schedList.toArray(new Airing[0]);
-//							if(useCache)
-//								CACHE.put(getCacheKey(station), sched);
-//						} catch (JSONException e) {
-//							LOG.error(String.format("Invalid JSON in response! [key=%s]", key), e);
-//						} catch(IOException e) {
-//							LOG.error("IOError reading zip stream!", e);
-//						}
-//					}
-//				} 
-//				try { data.close(); } catch(IOException e) { LOG.warn("IOError closing zip stream!", e); }			
-//			} else
-//				throw new IOException(resp.optString("message"));
 		}
 		return sched;
 	}
@@ -431,6 +444,7 @@ public class NetworkEpgClient extends EpgClient {
 		else
 			for(Station s : lineup.getStations())
 				misses.add(s.getId());
+		
 		if(misses.size() > 0) {
 			JSONObject reqObj = new JSONObject();
 			try {
@@ -438,7 +452,7 @@ public class NetworkEpgClient extends EpgClient {
 			} catch (JSONException e1) {
 				throw new RuntimeException(e1);
 			}
-			try(InputStream resp = new JsonRequest(JsonRequest.Action.POST, RestNouns.SCHEDULES, hash, getUserAgent(), baseUrl).submitForInputStream(reqObj)) {
+			try(InputStream resp = factory.get(JsonRequest.Action.POST, RestNouns.SCHEDULES, hash, getUserAgent(), baseUrl).submitForInputStream(reqObj)) {
 				for(String input : (List<String>)IOUtils.readLines(resp)) {
 					JSONObject sched = new JSONObject(input);
 					Station s = lineup.getStation(sched.getString("stationID"));
@@ -483,7 +497,7 @@ public class NetworkEpgClient extends EpgClient {
 				throw new IOException(e);
 			}
 			
-			try (InputStream resp = new JsonRequest(JsonRequest.Action.POST, RestNouns.PROGRAMS, hash, getUserAgent(), baseUrl).submitForInputStream(req)) {
+			try (InputStream resp = factory.get(JsonRequest.Action.POST, RestNouns.PROGRAMS, hash, getUserAgent(), baseUrl).submitForInputStream(req)) {
 				for(String input : (List<String>)IOUtils.readLines(resp)) {
 					JSONObject prog = new JSONObject(input);
 					Program p = new Program(prog);
@@ -517,7 +531,7 @@ public class NetworkEpgClient extends EpgClient {
 		
 	@Override
 	public void deleteMessage(final Message msg) throws IOException {
-		JsonRequest req = new JsonRequest(JsonRequest.Action.DELETE, String.format("%s/%s", RestNouns.MESSAGES, msg.getId()), getHash(), getUserAgent(), getBaseUrl());
+		JsonRequest req = factory.get(JsonRequest.Action.DELETE, String.format("%s/%s", RestNouns.MESSAGES, msg.getId()), getHash(), getUserAgent(), getBaseUrl());
 		JSONObject resp;
 		try {
 			resp = new JSONObject(req.submitForJson(null));	
@@ -543,7 +557,7 @@ public class NetworkEpgClient extends EpgClient {
 	
 	@Override
 	public int registerLineup(final Lineup l) throws IOException {
-		JsonRequest req = new JsonRequest(Action.PUT, l.getUri(), getHash(), getUserAgent(), getBaseUrl());
+		JsonRequest req = factory.get(Action.PUT, l.getUri(), getHash(), getUserAgent(), getBaseUrl());
 		JSONObject resp;
 		try {
 			resp = new JSONObject(req.submitForJson(null));	
@@ -563,7 +577,7 @@ public class NetworkEpgClient extends EpgClient {
 	
 	@Override
 	public int unregisterLineup(final Lineup l) throws IOException {
-		JsonRequest req = new JsonRequest(Action.DELETE, l.getUri(), getHash(), getUserAgent(), getBaseUrl());
+		JsonRequest req = factory.get(Action.DELETE, l.getUri(), getHash(), getUserAgent(), getBaseUrl());
 		JSONObject resp;
 		try {
 			resp = new JSONObject(req.submitForJson(null));
@@ -583,14 +597,14 @@ public class NetworkEpgClient extends EpgClient {
 	
 	@Override
 	protected String fetchChannelMapping(Lineup lineup) throws IOException {
-		return new JsonRequest(Action.GET, lineup.getUri(), getHash(), getUserAgent(), getBaseUrl()).submitForJson(null);
+		return factory.get(Action.GET, lineup.getUri(), getHash(), getUserAgent(), getBaseUrl()).submitForJson(null);
 	}
 	
 	@Override
 	public Lineup getLineupByUriPath(String path) throws IOException {
 		JSONObject resp;
 		try {
-			resp = new JSONObject(new JsonRequest(Action.GET, UriUtils.stripApiVersion(path), getHash(), getUserAgent(), getBaseUrl()).submitForJson(null));
+			resp = new JSONObject(factory.get(Action.GET, UriUtils.stripApiVersion(path), getHash(), getUserAgent(), getBaseUrl()).submitForJson(null));
 		} catch(JSONException e) {
 			throw new IOException(e);
 		}

@@ -13,16 +13,16 @@
  *       See the License for the specific language governing permissions and
  *       limitations under the License.
  */
-package org.schedulesdirect.api;
+package org.schedulesdirect.api.json;
 
 import org.junit.Test;
-import org.schedulesdirect.api.JsonRequest.Action;
+import org.schedulesdirect.api.json.JsonRequest.Action;
 import org.schedulesdirect.test.SdjsonTestSuite;
 
 public class JsonRequestTest extends SdjsonTestSuite {
 	
 	@Test(expected=IllegalStateException.class)
 	public void testSubmitRawInvalidState() throws Exception {
-		new JsonRequest(Action.GET, "foo").submitForJson(null);
+		JsonRequestFactory.get().get(Action.GET, "foo").submitForJson(null);
 	}	
 }

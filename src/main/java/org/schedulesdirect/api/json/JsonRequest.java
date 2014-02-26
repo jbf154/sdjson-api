@@ -13,7 +13,7 @@
  *       See the License for the specific language governing permissions and
  *       limitations under the License.
  */
-package org.schedulesdirect.api;
+package org.schedulesdirect.api.json;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +29,8 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.DecompressingHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
+import org.schedulesdirect.api.Config;
+import org.schedulesdirect.api.EpgClient;
 
 /**
  * Encapsulates a request being sent to the Schedules Direct JSON service.
@@ -67,7 +69,7 @@ public final class JsonRequest {
 	 * @param userAgent The user agent string to use for the web request to SD
 	 * @param baseUrl The base URL to submit the request to; default used if null
 	 */
-	public JsonRequest(Action action, String resource, String hash, String userAgent, String baseUrl) {
+	JsonRequest(Action action, String resource, String hash, String userAgent, String baseUrl) {
 		this.hash = hash;
 		this.userAgent = userAgent;
 		targetUrl = null;
@@ -86,7 +88,7 @@ public final class JsonRequest {
 	 * @param resource The resource to be accessed for this request
 	 * @param hash The user's hash secret obtained from the SD service
 	 */
-	public JsonRequest(Action action, String resource) {
+	JsonRequest(Action action, String resource) {
 		this(action, resource, null, null, null);
 		valid = false;
 	}
