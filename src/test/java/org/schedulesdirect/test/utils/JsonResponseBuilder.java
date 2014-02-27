@@ -29,6 +29,16 @@ public final class JsonResponseBuilder {
 		return "{}";
 	}
 	
+	static public String buildProgramResponse() {
+		return "{}";
+	}
+	
+	static public String buildScheduleResponse() {
+		JSONObject resp = new JSONObject();
+		resp.put("programs", new JSONArray());
+		return resp.toString();
+	}
+	
 	static public String buildLineupsResponse() {
 		JSONObject resp = new JSONObject();
 		resp.put("lineups", new JSONArray());

@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -89,15 +88,8 @@ public class ZipEpgClient extends EpgClient {
 	static public final String USER_DATA = "user.txt";
 	
 	static private final Map<String, AtomicInteger> CLNT_COUNT = Collections.synchronizedMap(new HashMap<String, AtomicInteger>());
-	static private String getVfsKey(FileSystem vfs) throws IOException {
-		Iterator<Path> itr = vfs.getRootDirectories().iterator();
-		if(itr.hasNext()) {
-			Path root = itr.next();
-			if(itr.hasNext())
-				throw new IOException("Invalid filesystem being used as sdjson vfs!");
-			return root.toString();
-		} else
-			throw new IOException("Invalid filesystem being used as sdjson vfs!");
+	static private String getSrcZipKey(File src) {
+		return src.getAbsolutePath();
 	}
 	
 	/**
@@ -113,6 +105,7 @@ public class ZipEpgClient extends EpgClient {
 		return input.replaceAll(INVALID_FILE_CHARS, "_");
 	}
 	
+	private File src;
 	private FileSystem vfs;
 	private Map<String, Lineup> lineups;
 	private Map<String, Program> progCache;
@@ -135,6 +128,7 @@ public class ZipEpgClient extends EpgClient {
 	 */
 	public ZipEpgClient(final File zip) throws IOException {
 		super(null);
+		src = zip;
 		progCache = new HashMap<String, Program>();
 		try {
 			this.vfs = FileSystems.newFileSystem(new URI(String.format("jar:%s", zip.toURI())), Collections.<String, Object>emptyMap());
@@ -164,7 +158,7 @@ public class ZipEpgClient extends EpgClient {
 				throw new IOException(e);
 			}
 		}
-		String vfsKey = getVfsKey(vfs);
+		String vfsKey = getSrcZipKey(zip);
 		AtomicInteger i = CLNT_COUNT.get(vfsKey);
 		if(i == null) {
 			i = new AtomicInteger(0);
@@ -190,7 +184,7 @@ public class ZipEpgClient extends EpgClient {
 	public void close() throws IOException {
 		if(!closed) {
 			purgeCache();
-			String vfsKey = getVfsKey(vfs);
+			String vfsKey = getSrcZipKey(src);
 			AtomicInteger i = CLNT_COUNT.get(vfsKey);
 			int v = i != null ? i.decrementAndGet() : 0;
 			if(v == 0) {
