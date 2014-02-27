@@ -41,7 +41,8 @@ import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.schedulesdirect.api.exception.InvalidResponseException;
+import org.schedulesdirect.api.exception.InvalidJsonObjectException;
+import org.schedulesdirect.api.exception.JsonEncodingException;
 
 /**
  * An implementation of EpgClient that uses a local zip file as its data source
@@ -148,14 +149,20 @@ public class ZipEpgClient extends EpgClient {
 		lineups = new HashMap<String, Lineup>();
 		try(InputStream ins = Files.newInputStream(vfs.getPath(LINEUPS_LIST))) {
 			String input = IOUtils.toString(ins, ZIP_CHARSET.toString());
+			JSONObject o;
 			try {
-				JSONArray lineups = new JSONObject(input).getJSONArray("lineups");
+				o = new JSONObject(input);
+			} catch(JSONException e) {
+				throw new JsonEncodingException(String.format("ZipLineups: %s", e.getMessage()), e, input);
+			}
+			try {
+				JSONArray lineups = o.getJSONArray("lineups");
 				for(int i = 0; i < lineups.length(); ++i) {
 					JSONObject l = lineups.getJSONObject(i);
 					this.lineups.put(l.getString("uri"), new Lineup(l.getString("name"), l.getString("location"), l.getString("uri"), l.getString("type"), this));
 				}
 			} catch(JSONException e) {
-				throw new IOException(e);
+				throw new InvalidJsonObjectException(String.format("ZipLineups: %s", e.getMessage()), e, o.toString(3));
 			}
 		}
 		String vfsKey = getSrcZipKey(zip);
@@ -173,10 +180,12 @@ public class ZipEpgClient extends EpgClient {
 	public UserStatus getUserStatus() throws IOException {
 		if(closed)
 			throw new IllegalStateException("Instance has already been closed!");
+		String input = null;
 		try(InputStream ins = Files.newInputStream(vfs.getPath(USER_DATA))) {
-			return new UserStatus(new JSONObject(IOUtils.toString(ins, ZIP_CHARSET.toString())), null, this);
-		} catch (InvalidResponseException | JSONException e) {
-			throw new IOException(e);
+			input = IOUtils.toString(ins, ZIP_CHARSET.toString());
+			return new UserStatus(new JSONObject(input), null, this);
+		} catch (JSONException e) {
+			throw new JsonEncodingException(String.format("ZipUser: %s", e.getMessage()), e, input);
 		}
 	}
 	
@@ -207,9 +216,16 @@ public class ZipEpgClient extends EpgClient {
 		if(closed)
 			throw new IllegalStateException("Instance has already been closed!");
 		List<Airing> airs = new ArrayList<Airing>();
+		String input = null;
+		JSONObject o = null;
 		try(InputStream ins = Files.newInputStream(vfs.getPath(String.format("schedules/%s.txt", scrubFileName(station.getId()))))) {
-			String input = IOUtils.toString(ins, ZIP_CHARSET.toString());
-			JSONArray jarr = new JSONObject(input).getJSONArray("programs");
+			input = IOUtils.toString(ins, ZIP_CHARSET.toString());
+			try {
+				o = new JSONObject(input);
+			} catch(JSONException e) {
+				throw new JsonEncodingException(String.format("Schedule[%s]: %s", station.getId(), e.getMessage()), e, input);
+			}
+			JSONArray jarr = o.getJSONArray("programs");
 			for(int i = 0; i < jarr.length(); ++i) {
 				JSONObject src = jarr.getJSONObject(i);
 				Program p = fetchProgram(src.getString("programID"));
@@ -217,7 +233,7 @@ public class ZipEpgClient extends EpgClient {
 					airs.add(new Airing(src, p, station));
 			}
 		} catch (JSONException e) {
-			throw new IOException("JSON error!", e);
+			throw new InvalidJsonObjectException(String.format("Schedule[%s]: %s", station.getId(), e.getMessage()), e, o.toString(3));
 		}
 		return airs.toArray(new Airing[0]);
 	}
@@ -231,7 +247,12 @@ public class ZipEpgClient extends EpgClient {
 			try(InputStream ins = Files.newInputStream(vfs.getPath(String.format("programs/%s.txt", scrubFileName(progId))))) {
 				String data = IOUtils.toString(ins, ZIP_CHARSET.toString());
 				if(data != null) {
-					JSONObject obj = new JSONObject(data);
+					JSONObject obj;
+					try {
+						obj = new JSONObject(data);
+					} catch(JSONException e) {
+						throw new JsonEncodingException(String.format("ZipProgram[%s]: %s", progId, e.getMessage()), e, data);
+					}
 					String cachedMd5 = obj.optString("md5", "");
 					if(cachedMd5 != null && !"".equals(cachedMd5)) {
 						p = new Program(obj);
@@ -348,12 +369,14 @@ public class ZipEpgClient extends EpgClient {
 		if(closed)
 			throw new IllegalStateException("Instance has already been closed!");
 		try(InputStream ins = Files.newInputStream(vfs.getPath(USER_DATA))) {
-			JSONObject user = new JSONObject(IOUtils.toString(ins, ZIP_CHARSET.toString()));
+			String input = IOUtils.toString(ins, ZIP_CHARSET.toString());
+			JSONObject user;
+			try {
+				user = new JSONObject(input);
+			} catch(JSONException e) {
+				throw new JsonEncodingException(String.format("ZipSysStatus: %s", e.getMessage()), e, input);
+			}
 			return new SystemStatus(user.getJSONArray("systemStatus"));
-		} catch (InvalidResponseException e) {
-			throw new IOException(e);
-		} catch (JSONException e) {
-			throw new IOException(e);
 		}
 	}
 
@@ -400,7 +423,12 @@ public class ZipEpgClient extends EpgClient {
 	@Override
 	protected String fetchChannelMapping(Lineup lineup) throws IOException {
 		try(InputStream ins = Files.newInputStream(vfs.getPath("maps", ZipEpgClient.scrubFileName(String.format("%s.txt", lineup.getId()))))) {
-			return new JSONObject(IOUtils.toString(ins, ZipEpgClient.ZIP_CHARSET.toString())).toString();
+			String input = IOUtils.toString(ins, ZipEpgClient.ZIP_CHARSET.toString());
+			try {
+				return new JSONObject(input).toString();
+			} catch(JSONException e) {
+				throw new JsonEncodingException(String.format("ZipLineupMap: %s", e.getMessage()), e, input);
+			}
 		}
 	}
 }

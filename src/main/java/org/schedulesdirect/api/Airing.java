@@ -1,5 +1,5 @@
 /*
- *      Copyright 2012-2013 Battams, Derek
+ *      Copyright 2012-2014 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -350,10 +350,8 @@ public class Airing {
 			descriptiveVideo = src.optBoolean("dvs");
 			is3d = src.optBoolean("is3d");
 			broadcastLanguage = src.optString("programLanguage", null);
-		} catch(JSONException e) {
-			throw new InvalidJsonObjectException(e);
-		} catch(ParseException e) {
-			throw new InvalidJsonObjectException(e);
+		} catch(JSONException | ParseException e) {
+			throw new InvalidJsonObjectException(String.format("Airing[%s]: %s", id, e.getMessage()), e, src.toString(3));
 		}
 	}
 

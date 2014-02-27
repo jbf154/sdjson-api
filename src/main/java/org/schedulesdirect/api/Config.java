@@ -84,11 +84,9 @@ public final class Config {
 		return INSTANCE;
 	}
 	
-	private boolean debugOverrideActive;
 	private String dateTimeFmt;
 	
 	private Config() {
-		debugOverrideActive = System.getenv("SDJSON_DEBUG") != null;
 		dateTimeFmt = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 	}
 
@@ -100,6 +98,7 @@ public final class Config {
 	
 	/**
 	 * Get a SimpleDateFormat instance for the configured date/time format string
+	 * <p>This cannot be overridden at runtime.</p>
 	 * @return The SimpleDateFormat instance
 	 */
 	public SimpleDateFormat getDateTimeFormat() {
@@ -109,16 +108,50 @@ public final class Config {
 	}
 	
 	/**
-	 * If true, various responses from the Schedules Direct server are ignored.
-	 * 
 	 * <p>
-	 * When true, the client will ignore various action directives from the server and proceed.
-	 * One example is if this flag is true then the client will ignore the SD server if it says
-	 * there is no new data.  Instead it will assume there is always new data and attempt a full
-	 * download.  This should only be enabled during client development and testing; it should
-	 * never be enabled in a production environment!
+	 * 	When true, the api will capture and write all JSON parsing errors it
+	 *  encounters to disk; useful for debugging and bug reporting.
 	 * </p>
-	 * @return The current state of the debug override flag
+	 * <p>
+	 *  Default is false, to enable set the JVM system property:
+	 *  
+	 *  <code>sdjson.capture.json-errors</code>
+	 * </p>
+	 * @return
 	 */
-	public boolean isDebugOverrideActive() { return debugOverrideActive; }	
+	public boolean captureJsonParseErrors() {
+		return System.getProperty("sdjson.capture.json-errors") != null;
+	}
+
+	/**
+	 * <p>
+	 * 	When true, the api will capture and write all JSON encoding errors it
+	 *  encounters to disk; useful for debugging and bug reporting.
+	 * </p>
+	 * <p>
+	 *  Default is false, to enable set the JVM system property:
+	 *  
+	 *  <code>sdjson.capture.encode-errors</code>
+	 * </p>
+	 * @return
+	 */
+	public boolean captureJsonEncodingErrors() {
+		return System.getProperty("sdjson.capture.encode-errors") != null;
+	}
+	
+	/**
+	 * <p>
+	 *  Specifies the root directory that all capture logs are written to.
+	 * </p>
+	 * <p>
+	 *  Default is <code>${user.home}/.sdjson/capture</code>; can be overriden via system property:
+	 *  
+	 *  <code>sdjson.fs.capture=/path/to/root/dir</code>
+	 * </p>
+	 * @return
+	 */
+	public File captureRoot() {
+		String capRoot = System.getProperty("sdjson.fs.capture");
+		return new File(capRoot != null && capRoot.length() > 0 ? capRoot : String.format("%s/%s", System.getProperty("user.home"), ".sdjson/capture"));
+	}
 }

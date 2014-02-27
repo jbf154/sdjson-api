@@ -44,7 +44,7 @@ public class SystemStatus {
 					statusMessage = obj.getString("details");
 				}
 			} catch(Exception e) {
-				throw new InvalidJsonObjectException(e);
+				throw new InvalidJsonObjectException(String.format("SystemStatus: %s", e.getMessage()), e, src.toString(3));
 			}
 		}
 	}

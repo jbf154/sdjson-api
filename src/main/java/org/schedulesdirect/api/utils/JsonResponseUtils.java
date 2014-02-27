@@ -30,12 +30,16 @@ public final class JsonResponseUtils {
 		try {
 			return resp.getInt("code");
 		} catch(JSONException e) {
-			throw new InvalidJsonObjectException(e);
+			throw new InvalidJsonObjectException("ErrorResponse: Not an error!", e, resp.toString(3));
 		}
 	}
 	
 	static public boolean isErrorResponse(JSONObject resp) {
-		return resp.has("code") && getErrorCode(resp) != ApiResponse.OK;
+		try {
+			return resp.has("code") && getErrorCode(resp) != ApiResponse.OK;
+		} catch(InvalidJsonObjectException e) {
+			return false;
+		}
 	}
 	
 	private JsonResponseUtils() {}

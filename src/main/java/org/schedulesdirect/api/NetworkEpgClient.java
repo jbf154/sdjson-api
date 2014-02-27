@@ -35,11 +35,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.schedulesdirect.api.exception.InvalidCredentialsException;
+import org.schedulesdirect.api.exception.InvalidJsonObjectException;
+import org.schedulesdirect.api.exception.JsonEncodingException;
 import org.schedulesdirect.api.exception.ServiceOfflineException;
+import org.schedulesdirect.api.exception.SilentInvalidJsonObjectException;
 import org.schedulesdirect.api.json.IJsonRequestFactory;
 import org.schedulesdirect.api.json.JsonRequest;
-import org.schedulesdirect.api.json.JsonRequestFactory;
 import org.schedulesdirect.api.json.JsonRequest.Action;
+import org.schedulesdirect.api.json.JsonRequestFactory;
 import org.schedulesdirect.api.utils.JsonResponseUtils;
 import org.schedulesdirect.api.utils.UriUtils;
 
@@ -213,8 +216,9 @@ public class NetworkEpgClient extends EpgClient {
 	 * @throws InvalidCredentialsException Thrown if authorization failed
 	 * @throws IOException Thrown on any IO error communicating with the Schedules Direct servers
 	 * @throws ServiceOfflineException Thrown if the web service reports itself as offline/unavailable
+	 * @throws InvalidJsonObjectException Thrown if the response object is not in the expected format
 	 */
-	protected void authorize() throws InvalidCredentialsException, IOException, ServiceOfflineException {
+	protected void authorize() throws InvalidJsonObjectException, InvalidCredentialsException, IOException, ServiceOfflineException {
 		JSONObject creds = new JSONObject();
 		creds.put("username", id);
 		/*
@@ -224,16 +228,17 @@ public class NetworkEpgClient extends EpgClient {
 		creds.put("password", DigestUtils.shaHex(password));
 
 		JSONObject resp;
+		String input = factory.get(JsonRequest.Action.POST, RestNouns.LOGIN_TOKEN, hash, getUserAgent(), baseUrl).submitForJson(creds);
 		try {
-			resp = new JSONObject(factory.get(JsonRequest.Action.POST, RestNouns.LOGIN_TOKEN, hash, getUserAgent(), baseUrl).submitForJson(creds));
+			resp = new JSONObject(input);
 		} catch(JSONException e) {
-			throw new IOException(e);
+			throw new JsonEncodingException(String.format("Token: %s", e.getMessage()), e, input);
 		}
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
 			try {
 				hash = resp.getString("token");
 			} catch (JSONException e) {
-				throw new IOException(e);
+				throw new InvalidJsonObjectException(String.format("Token: %s", e.getMessage()), e, resp.toString(3));
 			}
 		} else if(resp.optInt("code", ApiResponse.NOT_PROVIDED) == ApiResponse.SERVICE_OFFLINE)
 			throw new ServiceOfflineException(resp.optString("message"));
@@ -247,10 +252,11 @@ public class NetworkEpgClient extends EpgClient {
 	 */
 	protected void initStatusObjects() throws IOException {
 		JSONObject resp;
+		String input = factory.get(JsonRequest.Action.GET, RestNouns.STATUS, hash, getUserAgent(), baseUrl).submitForJson(null);
 		try {
-			resp = new JSONObject(factory.get(JsonRequest.Action.GET, RestNouns.STATUS, hash, getUserAgent(), baseUrl).submitForJson(null));
+			resp = new JSONObject(input);
 		} catch(JSONException e) {
-			throw new IOException(e);
+			throw new JsonEncodingException(String.format("Status[%s]: %s", id, e.getMessage()), e, input);
 		}
 		
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
@@ -258,7 +264,7 @@ public class NetworkEpgClient extends EpgClient {
 			try {
 				systemStatus = new SystemStatus(resp.getJSONArray("systemStatus"));
 			} catch(JSONException e) {
-				throw new IOException(e);
+				throw new InvalidJsonObjectException(String.format("Status[%s]: %s", id, e.getMessage()), e, resp.toString(3));
 			}
 		} else
 			throw new IOException(resp.optString("message"));
@@ -275,10 +281,11 @@ public class NetworkEpgClient extends EpgClient {
 	public Lineup[] getLineups() throws IOException {
 		Lineup[] list = null;
 		JSONObject resp;
+		String input = factory.get(JsonRequest.Action.GET, RestNouns.LINEUPS, hash, getUserAgent(), baseUrl).submitForJson(null);
 		try {
-			resp = new JSONObject(factory.get(JsonRequest.Action.GET, RestNouns.LINEUPS, hash, getUserAgent(), baseUrl).submitForJson(null));
+			resp = new JSONObject(input);
 		} catch(JSONException e) {
-			throw new IOException(e);
+			throw new JsonEncodingException(String.format("Lineups[%s]: %s", id, e.getMessage()), e, input);
 		}
 		
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
@@ -290,25 +297,30 @@ public class NetworkEpgClient extends EpgClient {
 					list[i] = new Lineup(lineup.getString("name"), lineup.getString("location"), lineup.getString("uri"), lineup.getString("type"), this);
 				}
 			} catch(JSONException e) {
-				throw new IOException(e);
+				throw new InvalidJsonObjectException(String.format("Lineups[%s]: %s", id, e.getMessage()), e, resp.toString(3));
 			}
 		} else if(JsonResponseUtils.getErrorCode(resp) != ApiResponse.NO_LINEUPS)
 			throw new IOException(String.format("Error getting lineups! [%s]", resp.optString("message")));
 		return list;
 	}
 	
-	private Lineup parseLineupResponse(JSONObject lineup) {
-		return new Lineup(lineup.getString("name"), lineup.getString("location"), lineup.getString("uri"), lineup.getString("type"), this);
+	private Lineup parseLineupResponse(JSONObject lineup) throws InvalidJsonObjectException {
+		try {
+			return new Lineup(lineup.getString("name"), lineup.getString("location"), lineup.getString("uri"), lineup.getString("type"), this);
+		} catch(JSONException e) {
+			throw new InvalidJsonObjectException(String.format("Lineup[%s]: %s", id, e.getMessage()), e, lineup.toString(3));
+		}
 	}
 
 	@Override
 	protected Lineup[] searchForLineups(final String location, final String zip) throws IOException {
 		List<Lineup> hes = new ArrayList<Lineup>();
 		JSONObject resp;
+		String input = factory.get(JsonRequest.Action.GET, String.format("%s?country=%s&postalcode=%s", RestNouns.HEADENDS, URLEncoder.encode(location, "UTF-8"), URLEncoder.encode(zip, "UTF-8")), hash, getUserAgent(), baseUrl).submitForJson(null);
 		try {
-			resp = new JSONObject(factory.get(JsonRequest.Action.GET, String.format("%s?country=%s&postalcode=%s", RestNouns.HEADENDS, URLEncoder.encode(location, "UTF-8"), URLEncoder.encode(zip, "UTF-8")), hash, getUserAgent(), baseUrl).submitForJson(null));			
+			resp = new JSONObject(input);			
 		} catch(JSONException e) {
-			throw new IOException(e);
+			throw new JsonEncodingException(String.format("SearchResp: %s", e.getMessage()), e, input);
 		}
 		
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
@@ -327,7 +339,7 @@ public class NetworkEpgClient extends EpgClient {
 					}
 				}				
 			} catch(JSONException e) {
-				throw new IOException(e);
+				throw new InvalidJsonObjectException(String.format("SearchResp: %s", e.getMessage()), e, resp.toString(3));
 			}
 		}
 		return hes.toArray(new Lineup[hes.size()]);
@@ -399,13 +411,22 @@ public class NetworkEpgClient extends EpgClient {
 			@SuppressWarnings("unchecked")
 			List<String> input = IOUtils.readLines(ins);
 			for(String obj : input) {
-				JSONObject o = new JSONObject(obj);
+				JSONObject o;
+				try {
+					o = new JSONObject(obj);
+				} catch(JSONException e) {
+					throw new JsonEncodingException(String.format("ScheduleResp: %s", e.getMessage()), e, obj);
+				}
 				if(!JsonResponseUtils.isErrorResponse(o)) {
-					JSONArray progs = o.getJSONArray("programs");
-					for(int i = 0; i < progs.length(); ++i) {
-						JSONObject p = progs.getJSONObject(i);
-						if(!JsonResponseUtils.isErrorResponse(p))
-							schedList.add(new Airing(p, fetchProgram(p.getString("programID")), station));
+					try {
+						JSONArray progs = o.getJSONArray("programs");
+						for(int i = 0; i < progs.length(); ++i) {
+							JSONObject p = progs.getJSONObject(i);
+							if(!JsonResponseUtils.isErrorResponse(p))
+								schedList.add(new Airing(p, fetchProgram(p.getString("programID")), station));
+						}
+					} catch(JSONException e) {
+						throw new InvalidJsonObjectException(String.format(""), e, o.toString(3));
 					}
 				}
 			}
@@ -418,13 +439,14 @@ public class NetworkEpgClient extends EpgClient {
 		return fetchPrograms(new String[] { progId }).values().toArray(new Program[1])[0];
 	}
 
-	static private int pfTotal = 0;
-	static private int calls = 0;
 	private void prefetch(JSONArray airings) throws IOException {
 		List<String> ids = new ArrayList<>();
-		for(int i = 0; i < airings.length(); ++i)
-			ids.add(airings.getJSONObject(i).getString("programID"));
-		System.out.println(String.format("Prefetching programs: %d/%d/%d", ++calls, ids.size(), pfTotal += ids.size()));
+		try {
+			for(int i = 0; i < airings.length(); ++i)
+				ids.add(airings.getJSONObject(i).getString("programID"));
+		} catch(JSONException e) {
+			throw new SilentInvalidJsonObjectException(e);
+		}
 		fetchPrograms(ids.toArray(new String[0]));
 	}
 	
@@ -447,27 +469,32 @@ public class NetworkEpgClient extends EpgClient {
 		
 		if(misses.size() > 0) {
 			JSONObject reqObj = new JSONObject();
-			try {
-				reqObj.put("request", misses);
-			} catch (JSONException e1) {
-				throw new RuntimeException(e1);
-			}
+			reqObj.put("request", misses);
 			try(InputStream resp = factory.get(JsonRequest.Action.POST, RestNouns.SCHEDULES, hash, getUserAgent(), baseUrl).submitForInputStream(reqObj)) {
 				for(String input : (List<String>)IOUtils.readLines(resp)) {
-					JSONObject sched = new JSONObject(input);
-					Station s = lineup.getStation(sched.getString("stationID"));
-					JSONArray airs = sched.getJSONArray("programs");
-					if(useCache)
-						prefetch(airs);
-					List<Airing> result = new ArrayList<>();
-					for(int i = 0; i < airs.length(); ++i) {
-						JSONObject a = airs.getJSONObject(i);
-						Program p = fetchProgram(a.getString("programID"));
-						result.add(new Airing(a, p, s));
+					JSONObject sched;
+					try {
+						sched = new JSONObject(input);
+					} catch(JSONException e) {
+						throw new JsonEncodingException(String.format("Schedule: %s", e.getMessage()), e, input);
 					}
-					scheds.put(s, result.toArray(new Airing[0]));
-					if(useCache)
-						CACHE.put(getCacheKeyForStation(s.getId()), s);
+					try {
+						Station s = lineup.getStation(sched.getString("stationID"));
+						JSONArray airs = sched.getJSONArray("programs");
+						if(useCache)
+							prefetch(airs);
+						List<Airing> result = new ArrayList<>();
+						for(int i = 0; i < airs.length(); ++i) {
+							JSONObject a = airs.getJSONObject(i);
+							Program p = fetchProgram(a.getString("programID"));
+							result.add(new Airing(a, p, s));
+						}
+						scheds.put(s, result.toArray(new Airing[0]));
+						if(useCache)
+							CACHE.put(getCacheKeyForStation(s.getId()), s);
+					} catch(JSONException e) {
+						throw new InvalidJsonObjectException(String.format("Schedule: %s", e.getMessage()), e, sched.toString(3));
+					}
 				}
 			}
 		}
@@ -491,20 +518,25 @@ public class NetworkEpgClient extends EpgClient {
 			misses.addAll(Arrays.asList(progIds));
 		if(misses.size() > 0) {
 			JSONObject req = new JSONObject();
-			try {
-				req.put("request", new JSONArray(misses));
-			} catch (JSONException e) {
-				throw new IOException(e);
-			}
+			req.put("request", new JSONArray(misses));
 			
 			try (InputStream resp = factory.get(JsonRequest.Action.POST, RestNouns.PROGRAMS, hash, getUserAgent(), baseUrl).submitForInputStream(req)) {
 				for(String input : (List<String>)IOUtils.readLines(resp)) {
-					JSONObject prog = new JSONObject(input);
-					Program p = new Program(prog);
-					String key = p.getId();
-					progs.put(p.getId(), p);
-					if(useCache)
-						CACHE.put(getCacheKeyForProgram(key), p);
+					JSONObject prog;
+					try {
+						prog = new JSONObject(input);
+					} catch(JSONException e) {
+						throw new JsonEncodingException(String.format("Program: %s", e.getMessage()), e, input);
+					}
+					try {
+						Program p = new Program(prog);
+						String key = p.getId();
+						progs.put(p.getId(), p);
+						if(useCache)
+							CACHE.put(getCacheKeyForProgram(key), p);
+					} catch(JSONException e) {
+						throw new InvalidJsonObjectException(String.format(""), e, prog.toString(3));
+					}
 				}
 			}
 		}
@@ -532,11 +564,12 @@ public class NetworkEpgClient extends EpgClient {
 	@Override
 	public void deleteMessage(final Message msg) throws IOException {
 		JsonRequest req = factory.get(JsonRequest.Action.DELETE, String.format("%s/%s", RestNouns.MESSAGES, msg.getId()), getHash(), getUserAgent(), getBaseUrl());
+		String input = req.submitForJson(null);
 		JSONObject resp;
 		try {
-			resp = new JSONObject(req.submitForJson(null));	
+			resp = new JSONObject(input);	
 		} catch(JSONException e) {
-			throw new IOException(e);
+			throw new JsonEncodingException(String.format("Message(DELETE): %s", e.getMessage()), e, input);
 		}
 		
 		if(JsonResponseUtils.isErrorResponse(resp))
@@ -559,17 +592,18 @@ public class NetworkEpgClient extends EpgClient {
 	public int registerLineup(final Lineup l) throws IOException {
 		JsonRequest req = factory.get(Action.PUT, l.getUri(), getHash(), getUserAgent(), getBaseUrl());
 		JSONObject resp;
+		String input = req.submitForJson(null);
 		try {
-			resp = new JSONObject(req.submitForJson(null));	
+			resp = new JSONObject(input);	
 		} catch(JSONException e) {
-			throw new IOException(e);
+			throw new JsonEncodingException(String.format("Lineup(REGISTER): %s", e.getMessage()), e, input);
 		}
 		
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
 			try {
 				return resp.getInt("changesRemaining");
 			} catch(JSONException e) {
-				throw new IOException(e);
+				throw new InvalidJsonObjectException(String.format("Lineup(REGISTER): %s", e.getMessage()), e, resp.toString(3));
 			}
 		} else
 			throw new IOException(String.format("Error registering lineup! [%s]", resp.optString("message")));
@@ -579,17 +613,18 @@ public class NetworkEpgClient extends EpgClient {
 	public int unregisterLineup(final Lineup l) throws IOException {
 		JsonRequest req = factory.get(Action.DELETE, l.getUri(), getHash(), getUserAgent(), getBaseUrl());
 		JSONObject resp;
+		String input = req.submitForJson(null);
 		try {
-			resp = new JSONObject(req.submitForJson(null));
+			resp = new JSONObject(input);
 		} catch(JSONException e) {
-			throw new IOException(e);
+			throw new JsonEncodingException(String.format("Lineup(DELETE): %s", e.getMessage()), e, input);
 		}
 		
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
 			try {
 				return resp.getInt("changesRemaining");
 			} catch(JSONException e) {
-				throw new IOException(e);
+				throw new InvalidJsonObjectException(String.format("Lineup(DELETE): %s", e.getMessage()), e, resp.toString(3));
 			}
 		} else
 			throw new IOException(String.format("Error unregistering lineup! [%s]", resp.optString("message")));
@@ -603,10 +638,11 @@ public class NetworkEpgClient extends EpgClient {
 	@Override
 	public Lineup getLineupByUriPath(String path) throws IOException {
 		JSONObject resp;
+		String input = factory.get(Action.GET, UriUtils.stripApiVersion(path), getHash(), getUserAgent(), getBaseUrl()).submitForJson(null);
 		try {
-			resp = new JSONObject(factory.get(Action.GET, UriUtils.stripApiVersion(path), getHash(), getUserAgent(), getBaseUrl()).submitForJson(null));
+			resp = new JSONObject(input);
 		} catch(JSONException e) {
-			throw new IOException(e);
+			throw new JsonEncodingException(String.format("Lineup[%s]: %s", path, e.getMessage()), e, input);
 		}
 		return parseLineupResponse(resp);
 	}

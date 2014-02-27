@@ -31,7 +31,7 @@ public class MessageTest extends SdjsonTestSuite {
 	static private final EpgClient MOCK_CLNT = mock(EpgClient.class);
 	
 	@Test
-	public void testConstruction() {
+	public void testConstruction() throws Exception {
 		JSONObject o = new JSONObject();
 		Date d = new Date();
 		o.put("date", Config.get().getDateTimeFormat().format(d));
@@ -54,14 +54,14 @@ public class MessageTest extends SdjsonTestSuite {
 	}
 	
 	@Test(expected=InvalidJsonObjectException.class)
-	public void verifyMsgIdRequired() {
+	public void verifyMsgIdRequired() throws Exception {
 		JSONObject o = new JSONObject();
 		o.put("date", Config.get().getDateTimeFormat().format(new Date()));
 		new Message(o, MOCK_CLNT);		
 	}
 	
 	@Test(expected=InvalidJsonObjectException.class)
-	public void verifyDateRequired() {
+	public void verifyDateRequired() throws Exception {
 		JSONObject o = new JSONObject();
 		o.put("msgID", "foo");
 		new Message(o, MOCK_CLNT);		

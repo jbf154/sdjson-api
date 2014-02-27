@@ -22,6 +22,7 @@ import java.util.Date;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
+import org.schedulesdirect.api.exception.SilentInvalidJsonObjectException;
 
 /**
  * Represents a message object as received from the SD server.
@@ -47,7 +48,7 @@ public class Message {
 			date = Config.get().getDateTimeFormat().parse(src.getString("date"));
 			id = src.getString("msgID");
 		} catch(JSONException | ParseException e) {
-			throw new InvalidJsonObjectException(e);
+			throw new SilentInvalidJsonObjectException(e);
 		}
 		content = src.optString("message");
 		this.clnt = clnt;

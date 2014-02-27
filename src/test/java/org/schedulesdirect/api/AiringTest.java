@@ -16,6 +16,7 @@
 package org.schedulesdirect.api;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -76,6 +77,9 @@ public class AiringTest extends SdjsonTestSuite {
 	}
 	
 	static private void loadAllSamples() throws Exception {
+		final String PROP = "sdjson.capture.json-errors";
+		String capVal = System.setProperty(PROP, "1");
+		assertTrue(Config.get().captureJsonParseErrors());
 		int failed = 0;
 		StringBuilder sb = new StringBuilder();
 		Station s = mock(Station.class);
@@ -97,6 +101,11 @@ public class AiringTest extends SdjsonTestSuite {
 					}
 				}
 		}
+		if(capVal == null)
+			System.clearProperty(PROP);
+		else
+			System.setProperty(PROP, capVal);
+
 		if(failed > 0)
 			LOG.warn(String.format("%d of %d samples (%s%%) failed to load!%n%s%n", failed, SAMPLE_DATA.size(), String.format("%.2f", 100.0F * failed / SAMPLE_DATA.size()), sb));
 		else if(LOG.isDebugEnabled())
@@ -112,7 +121,7 @@ public class AiringTest extends SdjsonTestSuite {
 
 	
 	@Test(expected=IllegalArgumentException.class)
-	public void setNullId() {
+	public void setNullId() throws Exception {
 		JSONObject src = new JSONObject(getRandomSample());
 		Program p = mock(Program.class);
 		when(p.getId()).thenReturn(src.getString("programID"));
@@ -122,7 +131,7 @@ public class AiringTest extends SdjsonTestSuite {
 	}
 	
 	@Test(expected=IllegalArgumentException.class)
-	public void setNonMatchingId() {
+	public void setNonMatchingId() throws Exception {
 		JSONObject src = new JSONObject(getRandomSample());
 		Program p = mock(Program.class);
 		when(p.getId()).thenReturn(src.getString("programID"));
@@ -132,7 +141,7 @@ public class AiringTest extends SdjsonTestSuite {
 	}
 	
 	@Test(expected=IllegalArgumentException.class)
-	public void setNullStation() {
+	public void setNullStation() throws Exception {
 		JSONObject src = new JSONObject(getRandomSample());
 		Program p = mock(Program.class);
 		when(p.getId()).thenReturn(src.getString("programID"));
@@ -142,7 +151,7 @@ public class AiringTest extends SdjsonTestSuite {
 	}
 	
 	@Test(expected=IllegalArgumentException.class)
-	public void setNullProgram() {
+	public void setNullProgram() throws Exception {
 		JSONObject src = new JSONObject(getRandomSample());
 		Program p = mock(Program.class);
 		when(p.getId()).thenReturn(src.getString("programID"));
@@ -152,7 +161,7 @@ public class AiringTest extends SdjsonTestSuite {
 	}
 	
 	@Test
-	public void setProgram() {
+	public void setProgram() throws Exception {
 		JSONObject src = new JSONObject(getRandomSample());
 		Program p = mock(Program.class);
 		when(p.getId()).thenReturn(src.getString("programID"));
@@ -164,5 +173,4 @@ public class AiringTest extends SdjsonTestSuite {
 		a.setProgram(p);
 		assertEquals("foobar", a.getId());
 	}
-
 }

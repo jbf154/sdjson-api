@@ -15,9 +15,10 @@
  */
 package org.schedulesdirect.api;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -75,6 +76,9 @@ public class ProgramTest extends SdjsonTestSuite {
 	}
 	
 	static private void loadAllSamples() throws Exception {
+		final String PROP = "sdjson.capture.json-errors";
+		String capVal = System.setProperty(PROP, "1");
+		assertTrue(Config.get().captureJsonParseErrors());
 		int failed = 0;
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < SAMPLE_DATA.size(); ++i) {
@@ -87,6 +91,11 @@ public class ProgramTest extends SdjsonTestSuite {
 				++failed;
 			}
 		}
+		if(capVal == null)
+			System.clearProperty(PROP);
+		else
+			System.setProperty(PROP, capVal);
+		
 		if(failed > 0) {
 			String msg = String.format("%d of %d samples (%s%%) failed to load!%n%s", failed, SAMPLE_DATA.size(), String.format("%.2f", 100.0F * failed / SAMPLE_DATA.size()), sb);
 			if(failed < SAMPLE_DATA.size() / 10)
@@ -105,7 +114,7 @@ public class ProgramTest extends SdjsonTestSuite {
 	}
 	
 	@Test(expected=IllegalArgumentException.class)
-	public void validateNullCtor() {
+	public void validateNullCtor() throws Exception {
 		new Program(null);
 	}
 	
@@ -225,43 +234,43 @@ public class ProgramTest extends SdjsonTestSuite {
 		assertEquals(3.5F, p.getStarRatingValue(), TestConfig.DBL_DELTA);
 	}
 
-	@Test(expected=IllegalArgumentException.class)
+	@Test(expected=ParseException.class)
 	public void calcInvalidCharRating() throws Exception {
 		Program p = new Program(new JSONObject(getRandomSampleProgram()));
 		p.setStarRating("%");
 	}
 
-	@Test(expected=IllegalArgumentException.class)
+	@Test(expected=ParseException.class)
 	public void calcValidAndInvalidEndCharRating() throws Exception {
 		Program p = new Program(new JSONObject(getRandomSampleProgram()));
 		p.setStarRating("*+b");
 	}
 
-	@Test(expected=IllegalArgumentException.class)
+	@Test(expected=ParseException.class)
 	public void calcValidAndInvaidFirstCharRating() throws Exception {
 		Program p = new Program(new JSONObject(getRandomSampleProgram()));
 		p.setStarRating("$**+");
 	}
 
-	@Test(expected=IllegalArgumentException.class)
+	@Test(expected=ParseException.class)
 	public void calcValidAndInvalidMiddleCharRating() throws Exception {
 		Program p = new Program(new JSONObject(getRandomSampleProgram()));
 		p.setStarRating("**42+");
 	}
 	
-	@Test(expected=IllegalArgumentException.class)
+	@Test(expected=ParseException.class)
 	public void calcHalfStarInMiddleRating() throws Exception {
 		Program p = new Program(new JSONObject(getRandomSampleProgram()));
 		p.setStarRating("**+*");
 	}
 	
-	@Test(expected=IllegalArgumentException.class)
+	@Test(expected=ParseException.class)
 	public void calcMultipleHalfsRating() throws Exception {
 		Program p = new Program(new JSONObject(getRandomSampleProgram()));
 		p.setStarRating("**++");
 	}
 	
-	@Test(expected=IllegalArgumentException.class)
+	@Test(expected=ParseException.class)
 	public void calcTooBigRating() throws Exception {
 		Program p = new Program(new JSONObject(getRandomSampleProgram()));
 		p.setStarRating("****+");

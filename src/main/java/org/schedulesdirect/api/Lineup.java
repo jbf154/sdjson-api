@@ -28,6 +28,8 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.schedulesdirect.api.exception.InvalidJsonObjectException;
+import org.schedulesdirect.api.exception.JsonEncodingException;
 import org.schedulesdirect.api.utils.UriUtils;
 
 /**
@@ -105,13 +107,15 @@ public class Lineup {
 	 * </p>
 	 * @param fetchAirings If true, all Stations will fill in their Airings as well, otherwise Stations will fill Airings in as needed
 	 * @throws IOException On any IO error
+	 * @throws InvalidJsonObjectException If the JSON response from upstream is not in the expected format
 	 */
 	public void fetchDetails(final boolean fetchAirings) throws IOException {
 		if(!detailsFetched) {
 			stationMap = new HashMap<String, List<String>>();
 			physicalStationMap = new HashMap<String, List<String>>();
+			String input = epgClnt.fetchChannelMapping(this);;
 			try {
-				JSONObject resp = new JSONObject(epgClnt.fetchChannelMapping(this));
+				JSONObject resp = new JSONObject(input);
 				channelMap = resp.getJSONArray("map");
 				Map<String, JSONObject> tuningData = getTuningData(resp.getJSONArray("map"));
 				fillStations(resp.getJSONArray("stations"), tuningData);
@@ -120,8 +124,10 @@ public class Lineup {
 					buildChannelMapViaAtscData();
 				else
 					buildChannelMapViaJsonData();
-			} catch(Exception e) {
-				throw new IOException(e);
+			} catch(JSONException e) {
+				throw new JsonEncodingException(String.format("Lineup[%s]: %s", id, e.getMessage()), e, input);
+			} catch(ParseException e) {
+				throw new InvalidJsonObjectException(String.format("Lineup[%s]: %s", id, e.getMessage()), e, input);
 			}
 			detailsFetched = true;
 		}
@@ -151,7 +157,7 @@ public class Lineup {
 		return result;
 	}
 	
-	private void fillStations(final JSONArray stationsArray, final Map<String, JSONObject> tuningData) throws JSONException {
+	private void fillStations(final JSONArray stationsArray, final Map<String, JSONObject> tuningData) throws InvalidJsonObjectException {
 		stations = new HashMap<String, Station>();
 		for(int i = 0; i < stationsArray.length(); ++i) {
 			JSONObject s = stationsArray.getJSONObject(i);

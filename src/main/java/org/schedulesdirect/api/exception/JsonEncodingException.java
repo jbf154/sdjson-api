@@ -1,5 +1,5 @@
 /*
- *      Copyright 2012-2014 Battams, Derek
+ *      Copyright 2014 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -30,14 +30,14 @@ import org.apache.commons.logging.LogFactory;
 import org.schedulesdirect.api.Config;
 
 /**
- * Represents an exception thrown when a received JSON object does not meet the expected format (i.e. expected fields are missing, etc.)
+ * When String input is expected to be JSON encoded data, but isn't then this exception is thrown in response
  * @author Derek Battams &lt;derek@battams.ca&gt;
  *
  */
-public class InvalidJsonObjectException extends IOException {
+public class JsonEncodingException extends IOException {
 
 	private static final long serialVersionUID = 1L;
-	static private final Log LOG = LogFactory.getLog(InvalidJsonObjectException.class);
+	static private final Log LOG = LogFactory.getLog(JsonEncodingException.class);
 	static private volatile boolean targetCleaned = false;
 	
 	private String src;
@@ -47,7 +47,7 @@ public class InvalidJsonObjectException extends IOException {
 	 * @param message The message to associate with the exception
 	 * @param src The input that caused the exception
 	 */
-	public InvalidJsonObjectException(String message, String src) {
+	public JsonEncodingException(String message, String src) {
 		super(message);
 		this.src = src;
 		capture();
@@ -58,7 +58,7 @@ public class InvalidJsonObjectException extends IOException {
 	 * @param cause The cause of the exception
 	 * @param src The input that caused the exception
 	 */
-	public InvalidJsonObjectException(Throwable cause, String src) {
+	public JsonEncodingException(Throwable cause, String src) {
 		super(cause);
 		this.src = src;
 		capture();
@@ -70,7 +70,7 @@ public class InvalidJsonObjectException extends IOException {
 	 * @param cause The cause of the exception
 	 * @param src The input that caused the exception
 	 */
-	public InvalidJsonObjectException(String message, Throwable cause, String src) {
+	public JsonEncodingException(String message, Throwable cause, String src) {
 		super(message, cause);
 		this.src = src;
 		capture();
@@ -81,10 +81,10 @@ public class InvalidJsonObjectException extends IOException {
 	 */
 	protected void capture() {
 		Config conf = Config.get();
-		if(conf.captureJsonParseErrors()) {
+		if(conf.captureJsonEncodingErrors()) {
 			String msg = generateMsg();
 			try {
-				Path p = Paths.get(conf.captureRoot().getAbsolutePath(), "json");
+				Path p = Paths.get(conf.captureRoot().getAbsolutePath(), "encode");
 				if(!targetCleaned && Files.exists(p))
 					try {
 						FileUtils.deleteDirectory(p.toFile());

@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
+import org.schedulesdirect.api.exception.SilentInvalidJsonObjectException;
 
 /**
  * A Station represents a single station available on a lineup
@@ -79,7 +80,7 @@ public class Station {
 //		private String md5;
 //		private Date lastModified;
 		
-		Logo(JSONObject src) throws InvalidJsonObjectException {
+		private Logo(JSONObject src) throws InvalidJsonObjectException {
 			try {
 				url = new URL(src.getString("URL"));
 				int[] dim = extractLogoDimensions(src.getString("dimension"));
@@ -89,7 +90,7 @@ public class Station {
 //				md5 = src.getString("md5");
 //				lastModified = Config.get().getDateTimeFormat().parse(src.getString("modified"));
 			} catch (Throwable e) {
-				throw new InvalidJsonObjectException(e);
+				throw new SilentInvalidJsonObjectException(e);
 			}
 		}
 		
@@ -207,7 +208,7 @@ public class Station {
 			atscMajorNumber = tuningDetails.optInt("atscMajor", 0);
 			atscMinorNumber = tuningDetails.optInt("atscMinor", 0);
 		} catch (JSONException e) {
-			throw new InvalidJsonObjectException(e);
+			throw new InvalidJsonObjectException(String.format("Station[%s]: %s", id, e.getMessage()), e, String.format("src:%n%s%n%ntuning:%s", src.toString(3), tuningDetails.toString(3)));
 		}
 	}
 

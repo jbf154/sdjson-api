@@ -28,7 +28,7 @@ import org.schedulesdirect.test.SdjsonTestSuite;
 public class SystemStatusTest extends SdjsonTestSuite {
 
 	@Test
-	public void validateFindsNewestMessage() {
+	public void validateFindsNewestMessage() throws Exception {
 		JSONArray a = new JSONArray();
 		JSONObject o = new JSONObject();
 		o.put("status", "foo");
@@ -45,7 +45,7 @@ public class SystemStatusTest extends SdjsonTestSuite {
 	}
 	
 	@Test(expected=InvalidJsonObjectException.class)
-	public void testInvalidObject() {
+	public void testInvalidObject() throws Exception {
 		JSONArray a = new JSONArray();
 		JSONObject o = new JSONObject();
 		o.put("status", "foo");

@@ -260,7 +260,7 @@ public class Program {
 	private MPAARating mpaaRating;
 	private String countryOfOrigin;
 	private String studio;
-	private String runTime;
+	private int runTime;
 	private String starRating;
 	private float starRatingValue;
 	private String episodeNumber;
@@ -320,7 +320,7 @@ public class Program {
 				starRatingValue = 0.0F;
 			else
 				starRatingValue = calcStarValue();
-			runTime = movieInfo != null && movieInfo.has("runTime") ? movieInfo.getString("runTime") : null;
+			runTime = movieInfo != null && movieInfo.has("runTime") ? movieInfo.getInt("runTime") : 0;
 			studio = movieInfo != null && movieInfo.has("origStudio") ? movieInfo.getString("origStudio") : null;
 			countryOfOrigin = movieInfo != null && movieInfo.has("origCountry") ? movieInfo.getString("origCountry") : null;
 			try {
@@ -401,7 +401,7 @@ public class Program {
 				colorCode = ColorCode.UNKNOWN;
 			}
 		} catch (JSONException | ParseException e) {
-			throw new InvalidJsonObjectException(String.format("Program[%s]: %s", id, e.getMessage()), e);
+			throw new InvalidJsonObjectException(String.format("Program[%s]: %s", id, e.getMessage()), e, src.toString(3));
 		}
 	}
 
@@ -588,9 +588,9 @@ public class Program {
 	}
 
 	/**
-	 * @return The running time of this program: hh:mm:ss or null if not available
+	 * @return The running time of this program in seconds or 0 if not known
 	 */
-	public String getRunTime() {
+	public int getRunTime() {
 		return runTime;
 	}
 
@@ -611,9 +611,9 @@ public class Program {
 	/**
 	 * Given a star rating from upstream, convert it to a number
 	 * @return The value of the star rating received
-	 * @throws InvalidJsonObjectException If an invalid character is encountered in the received string
+	 * @throws ParseException If an invalid character is encountered in the received string
 	 */
-	protected float calcStarValue() throws InvalidJsonObjectException {
+	protected float calcStarValue() throws ParseException {
 		if(starRating == null || starRating.length() == 0) return 0.0F;
 		float val = 0.0F;
 		for(int i = 0; i < starRating.length(); ++i) {
@@ -623,13 +623,13 @@ public class Program {
 				case '+':
 					val += 0.5F;
 					if(i != starRating.length() - 1)
-						throw new InvalidJsonObjectException(String.format("Invalid format: can only be one '+' character and it must be last! [%s]", starRating));
+						throw new ParseException(String.format("Invalid format: can only be one '+' character and it must be last! [%s]", starRating), i);
 					break;
-				default: throw new InvalidJsonObjectException(String.format("Invalid character in star rating! [%s]", Character.toString(c)));
+				default: throw new ParseException(String.format("Invalid character in star rating! [%s]", Character.toString(c)), i);
 			}
 		}
 		if(val > 4.0F)
-			throw new InvalidJsonObjectException(String.format("Star rating too high: %f [%s]", val, starRating));
+			throw new ParseException(String.format("Star rating too high: %f [%s]", val, starRating), 0);
 		return val;
 	}
 
@@ -909,21 +909,17 @@ public class Program {
 	/**
 	 * @param runTime the runTime to set
 	 */
-	public void setRunTime(String runTime) {
+	public void setRunTime(int runTime) {
 		this.runTime = runTime;
 	}
 
 	/**
 	 * @param starRating the starRating to set
-	 * @throws IllegalArgumentException Thrown if the arugment is not a valid star rating string
+	 * @throws ParseException Thrown if the arugment is not a valid star rating string
 	 */
-	public void setStarRating(String starRating) {
+	public void setStarRating(String starRating) throws ParseException {
 		this.starRating = starRating;
-		try {
-			starRatingValue = calcStarValue();
-		} catch(InvalidJsonObjectException e) {
-			throw new IllegalArgumentException(String.format("Invalid star rating string! [%s]", starRating));
-		}
+		starRatingValue = calcStarValue();
 	}
 
 	/**

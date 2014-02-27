@@ -28,7 +28,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
-import org.schedulesdirect.api.exception.InvalidResponseException;
 
 /**
  * UserStatus encapsulates the authenticated user's details with respect to the EpgClient session used to access the instance
@@ -61,7 +60,7 @@ public class UserStatus {
 	 * @param clnt The EpgClient instance to attach this status to
 	 * @throws InvalidJsonObjectException Thrown if the src is not in the expected format
 	 */
-	UserStatus(JSONObject src, String userId, EpgClient clnt) throws InvalidResponseException {
+	UserStatus(JSONObject src, String userId, EpgClient clnt) throws InvalidJsonObjectException {
 		try {
 			if(userId != null)
 				this.userId = userId;
@@ -90,10 +89,8 @@ public class UserStatus {
 			JSONObject clone = new JSONObject(src.toString());
 			clone.put("userId", this.userId);
 			jsonEncoding = clone.toString(3);
-		} catch(JSONException e) {
-			throw new InvalidResponseException(e);
-		} catch(ParseException e) {
-			throw new InvalidResponseException(e);
+		} catch(JSONException | ParseException e) {
+			throw new InvalidJsonObjectException(String.format("UserStatus[%s]: %s", this.userId, e.getMessage()), e, src.toString(3));
 		}
 	}
 
