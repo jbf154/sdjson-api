@@ -135,13 +135,6 @@ public class ProgramTest extends SdjsonTestSuite {
 	}
 
 	@Test(expected=InvalidJsonObjectException.class)
-	public void validateNoOrigAirDateInCtor() throws Exception {
-		JSONObject input = new JSONObject(getRandomSampleProgram());
-		input.remove("originalAirDate");
-		new Program(input);
-	}
-	
-	@Test(expected=InvalidJsonObjectException.class)
 	public void validateNoProgIdInCtor() throws Exception {
 		JSONObject input = new JSONObject(getRandomSampleProgram());
 		input.remove("programID");

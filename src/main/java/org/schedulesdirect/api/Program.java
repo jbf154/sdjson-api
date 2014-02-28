@@ -19,6 +19,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -126,6 +127,10 @@ public class Program {
 		PAID_PROGRAMMING,
 		SPECIAL,
 		MINISERIES,
+		FEATURE_FILM,
+		TV_MOVIE,
+		SPORTS_EVENT,
+		SPORTS_NON_EVENT,
 		/**
 		 * An unknown value was provided; provide the value in a bug ticket for future inclusion
 		 */
@@ -307,8 +312,7 @@ public class Program {
 			else
 				year = 0;
 			JSONObject titles = src.getJSONObject("titles");
-			//TMSBUG: title120 should not be optional!
-			title = titles.optString("title120", "[No Title]");
+			title = titles.getString("title120");
 			shortTitles = new String[4];
 			shortTitles[0] = titles.optString("title70");
 			shortTitles[1] = titles.optString("title40");
@@ -336,12 +340,30 @@ public class Program {
 			else
 				gameStart = null;
 			JSONObject descs = src.optJSONObject("descriptions");
-			shortDescriptions = new String[3];
+			shortDescriptions = new String[4];
 			if(descs != null) {
-				description = descs.optString("description255");
-				shortDescriptions[0] = descs.optString("description100");
-				shortDescriptions[1] = descs.optString("description60");
-				shortDescriptions[2] = descs.optString("description40");				
+				description = descs.optString("description1000");
+				shortDescriptions[0] = descs.optString("description255");
+				shortDescriptions[1] = descs.optString("description100");
+				shortDescriptions[2] = descs.optString("description60");
+				shortDescriptions[3] = descs.optString("description40");
+				Arrays.sort(shortDescriptions, new Comparator<String>() {
+
+					@Override
+					public int compare(String o1, String o2) {
+						if(o1 == null && o2 != null)
+							return 1;
+						else if(o1 != null && o2 == null)
+							return -1;
+						else if(o1 == null && o2 == null)
+							return 0;
+						else
+							return o2.length() - o1.length();
+					}
+					
+				});
+				if(description.length() == 0 && shortDescriptions[0].length() > 0)
+					description = shortDescriptions[0];
 				alternateDescription = descs.optString("alternateDescription255");
 				alternateDescriptionShort = descs.optString("alternateDescription100");
 			} else {
@@ -371,7 +393,6 @@ public class Program {
 				advisories = new String[0];
 			madeForTv = src.optBoolean("madeForTv");
 			episodeTitle = src.optString("episodeTitle150");
-			//TMSBUG: Is OAD actually optional or is this a bug in upstream data?
 			String orig = src.optString("originalAirDate", "");
 			originalAirDate = orig.length() > 0 && !orig.startsWith("0") ? ORIG_FMT.parse(src.getString("originalAirDate")) : null;
 			descriptionLanguage = descs != null ? src.optString("descriptionLanguage", null) : null;
@@ -383,7 +404,7 @@ public class Program {
 					LOG.warn(String.format("Unknown SourceType encountered! [%s]", srcType));
 				sourceType = SourceType.UNKNOWN;
 			}
-			String showVal = src.optString("showType", ShowType.NONE.toString()).toUpperCase().replace(' ', '_');
+			String showVal = src.optString("showType", ShowType.NONE.toString()).toUpperCase().replaceAll("[^A-Z]", "_");
 			try {
 				showType = showVal.length() == 0 ? ShowType.NONE : ShowType.valueOf(showVal);
 			} catch(IllegalArgumentException e) {

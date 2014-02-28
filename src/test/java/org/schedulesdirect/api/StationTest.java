@@ -28,7 +28,7 @@ public class StationTest extends SdjsonTestSuite {
 	static private final String BASIC_STATION_JSON = "{\"logo\":{\"dimension\":\"w=360px|h=270px\",\"URL\":\"https://s3.amazonaws.com/schedulesdirect/sources/h3/NowShowing/10098/s10098_h3_aa.png\"},\"affiliate\":\"CBS Affiliate\",\"name\":\"WWNYDT (WWNY-DT)\",\"broadcaster\":{\"postalcode\":\"13601\",\"state\":\"NY\",\"country\":\"United States\",\"city\":\"Watertown\"},\"stationID\":\"35045\",\"language\":\"English\",\"callsign\":\"WWNYDT\"}";
 	
 	@Test
-	public void validateNoPhysicalChannel() {
+	public void validateNoPhysicalChannel() throws Exception {
 		Station s = new Station(new JSONObject(BASIC_STATION_JSON), null, mock(EpgClient.class));
 		s.setUhfVhfNumber(0);
 		s.setAtscMajorNumber(1);
@@ -37,7 +37,7 @@ public class StationTest extends SdjsonTestSuite {
 	}
 	
 	@Test
-	public void validateNoLogicalMinor() {
+	public void validateNoLogicalMinor() throws Exception {
 		Station s = new Station(new JSONObject(BASIC_STATION_JSON), null, mock(EpgClient.class));
 		s.setAtscMinorNumber(0);
 		s.setAtscMajorNumber(4);
@@ -45,14 +45,14 @@ public class StationTest extends SdjsonTestSuite {
 	}
 	
 	@Test
-	public void validateNoLogicalMajor() {
+	public void validateNoLogicalMajor() throws Exception {
 		Station s = new Station(new JSONObject(BASIC_STATION_JSON), null, mock(EpgClient.class));
 		s.setAtscMajorNumber(0);
 		assertNull(s.getLogicalChannelNumber());
 	}
 	
 	@Test
-	public void validateValidChannelNTSC() {
+	public void validateValidChannelNTSC() throws Exception {
 		Station s = new Station(new JSONObject(BASIC_STATION_JSON), null, mock(EpgClient.class));
 		s.setUhfVhfNumber(15);
 		s.setAtscMajorNumber(0);
@@ -62,7 +62,7 @@ public class StationTest extends SdjsonTestSuite {
 	}
 	
 	@Test
-	public void validateValidChannelATSC() {
+	public void validateValidChannelATSC() throws Exception {
 		Station s = new Station(new JSONObject(BASIC_STATION_JSON), null, mock(EpgClient.class));
 		s.setUhfVhfNumber(31);
 		s.setAtscMajorNumber(4);
@@ -72,7 +72,7 @@ public class StationTest extends SdjsonTestSuite {
 	}
 	
 	@Test
-	public void testLogoDimensionParsing() {
+	public void testLogoDimensionParsing() throws Exception {
 		Station s = new Station(new JSONObject(BASIC_STATION_JSON), null, mock(EpgClient.class));
 		assertEquals(360, s.getLogo().getWidth());
 		assertEquals(270, s.getLogo().getHeight());

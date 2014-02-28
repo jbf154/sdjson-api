@@ -169,6 +169,7 @@ public class Station {
 	private int uhfVhfNumber;
 	private int atscMajorNumber;
 	private int atscMinorNumber;
+	private String language;
 	private Airing[] airings;
 	private Logo logo;
 	private EpgClient epgClnt;
@@ -189,15 +190,12 @@ public class Station {
 			name = src.getString("name");
 			affiliate = src.getString("affiliate");
 			JSONObject o = src.getJSONObject("broadcaster");
-			broadcasterState = o.getString("state");
-			broadcasterCity = o.getString("city");
-			//TMSBUG: mixing postalcode and zipcode in station data
-			broadcasterZip = o.optString("zipcode", null);
-			if(broadcasterZip == null)
-				broadcasterZip = o.optString("postalcode", null);
-			if(broadcasterZip == null)
-				broadcasterZip = "00000";
-			broadcasterCountry = o.getString("country");
+			if(o != null) {
+				broadcasterState = o.getString("state");
+				broadcasterCity = o.getString("city");
+				broadcasterZip = o.getString("postalcode");
+				broadcasterCountry = o.getString("country");
+			}
 			if(src.has("logo"))
 				logo = new Logo(src.getJSONObject("logo"));
 			else
@@ -207,6 +205,7 @@ public class Station {
 			uhfVhfNumber = tuningDetails.optInt("uhfVhf", 0);
 			atscMajorNumber = tuningDetails.optInt("atscMajor", 0);
 			atscMinorNumber = tuningDetails.optInt("atscMinor", 0);
+			language = src.optString("language");
 		} catch (JSONException e) {
 			throw new InvalidJsonObjectException(String.format("Station[%s]: %s", id, e.getMessage()), e, String.format("src:%n%s%n%ntuning:%s", src.toString(3), tuningDetails.toString(3)));
 		}
@@ -219,6 +218,14 @@ public class Station {
 		return id;
 	}
 
+	/**
+	 * 
+	 * @return The station's language or empty string if not provided (assume English in this case)
+	 */
+	public String getLanguage() {
+		return language;
+	}
+	
 	/**
 	 * @return The station's unique callsign
 	 */
