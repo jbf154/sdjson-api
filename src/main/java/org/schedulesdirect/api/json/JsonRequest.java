@@ -15,8 +15,12 @@
  */
 package org.schedulesdirect.api.json;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Date;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -31,6 +35,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.schedulesdirect.api.Config;
 import org.schedulesdirect.api.EpgClient;
+import org.schedulesdirect.api.utils.HttpUtils;
 
 /**
  * Encapsulates a request being sent to the Schedules Direct JSON service.
@@ -61,6 +66,7 @@ public final class JsonRequest {
 	private String resource;
 	private Action action;
 	private boolean valid;
+	private StringBuilder audit;
 	
 	/**
 	 * Constructor
@@ -77,6 +83,7 @@ public final class JsonRequest {
 		this.baseUrl = String.format("%s/%s/%s", baseUrl != null ? baseUrl : Config.DEFAULT_BASE_URL, EpgClient.API_VERSION, this.resource);
 		this.action = action;
 		valid = true;
+		audit = new StringBuilder(String.format("[[[ START REQUEST: %s%n", new Date()));
 	}
 
 	/**
@@ -119,8 +126,19 @@ public final class JsonRequest {
 	 * @throws IOException Thrown on any IO error encountered
 	 */
 	public String submitForJson(Object reqData) throws IOException {
+		String str = null;
 		try(InputStream ins = submitRaw(reqData)) {
-			return IOUtils.toString(ins, "UTF-8");
+			str = IOUtils.toString(ins, "UTF-8");
+			return str;
+		} finally {
+			Config conf = Config.get();
+			if(conf.captureHttpContent() && str != null) {
+				Path f = HttpUtils.captureContentToDisk(new ByteArrayInputStream(str.getBytes("UTF-8")));
+				audit.append(String.format("<<<output: [see %s]%n", f.toFile().getAbsolutePath()));
+			} else if(str != null)
+				audit.append(String.format("<<<output: [content capture disabled]%n"));
+			audit.append(String.format("END REQUEST: %s]]]%n", new Date()));
+			HttpUtils.captureToDisk(audit.toString());
 		}
 	}
 
@@ -132,24 +150,51 @@ public final class JsonRequest {
 	 * @throws IllegalStateException Thrown if called on a partially constructed object (the 2 arg ctor)
 	 */
 	public InputStream submitForInputStream(Object reqData) throws IOException {
-		return submitRaw(reqData);
+		try {
+			InputStream ins = submitRaw(reqData);
+			if(Config.get().captureHttpContent()) {
+				Path f = HttpUtils.captureContentToDisk(ins);
+				ins.close();
+				audit.append(String.format("<<<output: [see %s]%n", f.toFile().getAbsolutePath()));
+				try(InputStream fIns = Files.newInputStream(f)) {
+					return new ByteArrayInputStream(IOUtils.toByteArray(fIns));
+				}
+			} else {
+				audit.append(String.format("<<<output: [content capture disabled]%n"));
+				return ins;
+			}
+		} finally {
+			audit.append(String.format("END REQUEST: %s]]]%n", new Date()));
+			HttpUtils.captureToDisk(audit.toString());
+		}
 	}
 	
 	private InputStream submitRaw(Object reqData) throws IOException {
 		if(!valid)
 			throw new IllegalStateException("Cannot submit a partially constructed request!");
-		targetUrl = baseUrl.toString();
-		Executor exe = Executor.newInstance(new DecompressingHttpClient(new DefaultHttpClient()));
-		Request req = initRequest();
-		if(hash != null)
-			req.addHeader(new BasicHeader("token", hash));
-		if(reqData != null)
-			req.bodyString(reqData.toString(), ContentType.APPLICATION_JSON);
-		HttpResponse resp = exe.execute(req).returnResponse();
-		StatusLine status = resp.getStatusLine();
-		if(status.getStatusCode() != 200)
-			LOG.debug(String.format("%s returned error! [rc=%d]", req, status.getStatusCode()));
-		return resp.getEntity().getContent();
+		try {
+			targetUrl = baseUrl.toString();
+			audit.append(String.format(">>>target: %s%n>>>verb: %s%n", targetUrl, action));
+			Executor exe = Executor.newInstance(new DecompressingHttpClient(new DefaultHttpClient()));
+			Request req = initRequest();
+			if(hash != null)
+				req.addHeader(new BasicHeader("token", hash));
+			if(reqData != null)
+				req.bodyString(reqData.toString(), ContentType.APPLICATION_JSON);
+			audit.append(String.format(">>>req_headers:%n%s", HttpUtils.prettyPrintHeaders(HttpUtils.scrapeHeaders(req), "\t")));
+			if(action == Action.PUT || action == Action.POST)
+				audit.append(String.format(">>>input: %s%n", reqData));
+			HttpResponse resp = exe.execute(req).returnResponse();
+			StatusLine status = resp.getStatusLine();
+			audit.append(String.format("<<<resp_status: %s%n", status));
+			audit.append(String.format("<<<resp_headers:%n%s", HttpUtils.prettyPrintHeaders(resp.getAllHeaders(), "\t")));
+			if(status.getStatusCode() != 200)
+				LOG.debug(String.format("%s returned error! [rc=%d]", req, status.getStatusCode()));
+			return resp.getEntity().getContent();
+		} catch(IOException e) { 
+			audit.append(String.format("*** REQUEST FAILED! ***%n%s", e.getMessage()));
+			throw e;
+		}
 	}
 
 	/**

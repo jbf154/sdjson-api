@@ -133,7 +133,7 @@ public final class Config {
 	 *  
 	 *  <code>sdjson.capture.encode-errors</code>
 	 * </p>
-	 * @return
+	 * @return True if the option is enabled, false otherwise
 	 */
 	public boolean captureJsonEncodingErrors() {
 		return System.getProperty("sdjson.capture.encode-errors") != null;
@@ -148,10 +148,43 @@ public final class Config {
 	 *  
 	 *  <code>sdjson.fs.capture=/path/to/root/dir</code>
 	 * </p>
-	 * @return
+	 * @return The location to be used as the root sdjson capture logs
 	 */
 	public File captureRoot() {
 		String capRoot = System.getProperty("sdjson.fs.capture");
 		return new File(capRoot != null && capRoot.length() > 0 ? capRoot : String.format("%s/%s", System.getProperty("user.home"), ".sdjson/capture"));
+	}
+
+	/**
+	 * <p>
+	 * 	When true, the api will capture and write all HTTP communication with
+	 *  the JSON service to a log file.
+	 * </p>
+	 * <p>
+	 *  Default is false, to enable set the JVM system property:
+	 *  
+	 *  <code>sdjson.capture.http</code>
+	 * </p>
+	 * @return True if the option is enabled, false otherwise
+	 */
+	public boolean captureHttpComm() {
+		return System.getProperty("sdjson.capture.http") != null;
+	}
+
+	/**
+	 * <p>
+	 * 	When true, the api will capture the content of all HTTP communication
+	 *  with the JSON service.  This setting only has an affect if
+	 *  <code>captureHttpComm() == true</code>.
+	 * </p>
+	 * <p>
+	 *  Default is false, to enable set the JVM system property:
+	 *  
+	 *  <code>sdjson.capture.http.content</code>
+	 * </p>
+	 * @return True if the option is enabled, false otherwise
+	 */
+	public boolean captureHttpContent() {
+		return captureHttpComm() && System.getProperty("sdjson.capture.http.content") != null;
 	}
 }

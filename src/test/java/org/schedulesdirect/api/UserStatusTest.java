@@ -29,12 +29,12 @@ import org.schedulesdirect.test.utils.JsonResponseBuilder;
 
 public class UserStatusTest extends SdjsonTestSuite {
 	
-	static public UserStatus build(Date d) {
+	static public UserStatus build(Date d) throws Exception {
 		return new UserStatus(new JSONObject(JsonResponseBuilder.buildStatusResponse(d)), "fake", mock(EpgClient.class));	
 	}
 	
 	@Test
-	public void testConstruction() {
+	public void testConstruction() throws Exception {
 		Date d = new Date();
 		UserStatus us = build(d);
 		Date expectedDate = new Date(d.getTime() - (d.getTime() % 1000));
@@ -45,7 +45,7 @@ public class UserStatusTest extends SdjsonTestSuite {
 	}
 	
 	@Test
-	public void testIsExpired() {
+	public void testIsExpired() throws Exception {
 		Date d = new Date();
 		UserStatus us = build(d);
 		assertTrue(us.isExpired());
@@ -55,7 +55,7 @@ public class UserStatusTest extends SdjsonTestSuite {
 	}
 	
 	@Test
-	public void testIsNewDataAvailable() {
+	public void testIsNewDataAvailable() throws Exception {
 		Date d = new Date();
 		UserStatus us = build(d);
 		assertTrue(us.isNewDataAvailable(new Date(d.getTime() - 86400L * 1000L)));
