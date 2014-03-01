@@ -41,6 +41,15 @@ public abstract class EpgClient {
 	 */
 	static public final String SERVER_ID_ENTRY = "serverID.txt";
 	
+	/**
+	 * Given a lineup id, generate the full, absolute URI path for the lineup
+	 * @param id The unique lineup
+	 * @return The unique, absolute URI path for the lineup id
+	 */
+	static public String getUriPathForLineupId(String id) {
+		return String.format("/%s/lineups/%s", API_VERSION, id);
+	}
+	
 	private String userAgent;
 	
 	/**
@@ -88,6 +97,11 @@ public abstract class EpgClient {
 	
 	/**
 	 * Get the lineup for the given uri
+	 * <p><b>NOTE:</b>This method will only return objects registered to the user's account (or
+	 *    available in the local cache).  This method will not construct a Lineup object and
+	 *    return it if you do not have access to the Lineup in question.  In other words, you
+	 *    must register a lineup in your SD account before this method will return it.
+	 * </p>
 	 * @param path The absolute path to access the lineup data from; appended to BASE_URL to form full URI to be accessed
 	 * @return The Lineup instance for the given path or null if it could not be found
 	 * @throws IOException Thrown if there is any kind of IO error accessing the raw data feed
@@ -226,12 +240,12 @@ public abstract class EpgClient {
 	/**
 	 * Register the given lineup with the user's SD account
 	 * <p><i>Optional operation</i></p>
-	 * @param l The linueup to register
+	 * @param path The full, absolute URI of the lineup to register; perhaps grab this value from <code>EpgClient.getUriPathForLineupId()</code>
 	 * @return The number of register/unregister calls the user has remaining for today
 	 * @throws IOException On any IO error
 	 * @throws UnsupportedOperationException If the client type doesn't support the operation
 	 */
-	abstract public int registerLineup(final Lineup l) throws IOException;
+	abstract public int registerLineup(final String path) throws IOException;
 	
 	/**
 	 * Unregister the lineup from the user's SD account

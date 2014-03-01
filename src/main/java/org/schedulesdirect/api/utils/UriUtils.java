@@ -26,8 +26,9 @@ public final class UriUtils {
 	 * @param uri The uri to strip
 	 * @return The stripped uri, which is relative to the api version details
 	 */
-	static public String stripApiVersion(String uri) {
-		return uri.substring(uri.substring(1).indexOf('/') + 2);
+	static public String stripApiVersion(final String uri) {
+		boolean isAbs = uri.startsWith("/");
+		return isAbs ? uri.substring(uri.substring(1).indexOf('/') + 2) : uri;
 	}
 	
 	private UriUtils() {}

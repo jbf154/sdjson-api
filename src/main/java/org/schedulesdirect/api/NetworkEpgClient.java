@@ -29,8 +29,6 @@ import java.util.Map;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -85,7 +83,6 @@ import org.schedulesdirect.api.utils.UriUtils;
  *
  */
 public class NetworkEpgClient extends EpgClient {
-	static private final Log LOG = LogFactory.getLog(NetworkEpgClient.class);
 	/*
 	 * This is all for the client instance cache; just in case people do use this class to access EPG data, there is some effort to cache what we can
 	 */
@@ -304,14 +301,6 @@ public class NetworkEpgClient extends EpgClient {
 		return list;
 	}
 	
-	private Lineup parseLineupResponse(JSONObject lineup) throws InvalidJsonObjectException {
-		try {
-			return new Lineup(lineup.getString("name"), lineup.getString("location"), lineup.getString("uri"), lineup.getString("type"), this);
-		} catch(JSONException e) {
-			throw new InvalidJsonObjectException(String.format("Lineup[%s]: %s", id, e.getMessage()), e, lineup.toString(3));
-		}
-	}
-
 	@Override
 	protected Lineup[] searchForLineups(final String location, final String zip) throws IOException {
 		List<Lineup> hes = new ArrayList<Lineup>();
@@ -589,8 +578,8 @@ public class NetworkEpgClient extends EpgClient {
 	}
 	
 	@Override
-	public int registerLineup(final Lineup l) throws IOException {
-		JsonRequest req = factory.get(Action.PUT, l.getUri(), getHash(), getUserAgent(), getBaseUrl());
+	public int registerLineup(final String path) throws IOException {
+		JsonRequest req = factory.get(Action.PUT, UriUtils.stripApiVersion(path), getHash(), getUserAgent(), getBaseUrl());
 		JSONObject resp;
 		String input = req.submitForJson(null);
 		try {
@@ -637,13 +626,9 @@ public class NetworkEpgClient extends EpgClient {
 	
 	@Override
 	public Lineup getLineupByUriPath(String path) throws IOException {
-		JSONObject resp;
-		String input = factory.get(Action.GET, UriUtils.stripApiVersion(path), getHash(), getUserAgent(), getBaseUrl()).submitForJson(null);
-		try {
-			resp = new JSONObject(input);
-		} catch(JSONException e) {
-			throw new JsonEncodingException(String.format("Lineup[%s]: %s", path, e.getMessage()), e, input);
-		}
-		return parseLineupResponse(resp);
+		for(Lineup l : getLineups())
+			if(l.getUri().equals(UriUtils.stripApiVersion(path)))
+				return l;
+		throw new IOException(String.format("Unable to locate lineup for path: %s", path));
 	}
 }

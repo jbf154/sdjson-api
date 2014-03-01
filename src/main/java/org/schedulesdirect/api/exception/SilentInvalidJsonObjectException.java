@@ -36,7 +36,6 @@ public class SilentInvalidJsonObjectException extends
 
 	/**
 	 * @param message
-	 * @param src
 	 */
 	public SilentInvalidJsonObjectException(String message) {
 		super(message, null);
@@ -44,7 +43,6 @@ public class SilentInvalidJsonObjectException extends
 
 	/**
 	 * @param cause
-	 * @param src
 	 */
 	public SilentInvalidJsonObjectException(Throwable cause) {
 		super(cause, null);
@@ -53,7 +51,6 @@ public class SilentInvalidJsonObjectException extends
 	/**
 	 * @param message
 	 * @param cause
-	 * @param src
 	 */
 	public SilentInvalidJsonObjectException(String message, Throwable cause) {
 		super(message, cause, null);

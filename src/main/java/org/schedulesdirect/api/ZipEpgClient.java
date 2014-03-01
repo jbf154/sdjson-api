@@ -43,6 +43,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
 import org.schedulesdirect.api.exception.JsonEncodingException;
+import org.schedulesdirect.api.utils.UriUtils;
 
 /**
  * An implementation of EpgClient that uses a local zip file as its data source
@@ -396,7 +397,7 @@ public class ZipEpgClient extends EpgClient {
 	}
 
 	@Override
-	public int registerLineup(final Lineup l) throws IOException {
+	public int registerLineup(final String path) throws IOException {
 		throw new UnsupportedOperationException("Unsupported operation");
 	}
 
@@ -414,7 +415,7 @@ public class ZipEpgClient extends EpgClient {
 	@Override
 	public Lineup getLineupByUriPath(String path) throws IOException {
 		for(Lineup l : getLineups()) {
-			if(l.getUri().equals(path))
+			if(l.getUri().equals(UriUtils.stripApiVersion(path)))
 				return l;
 		}
 		return null;
