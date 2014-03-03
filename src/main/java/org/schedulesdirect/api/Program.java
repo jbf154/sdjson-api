@@ -131,6 +131,7 @@ public class Program {
 		TV_MOVIE,
 		SPORTS_EVENT,
 		SPORTS_NON_EVENT,
+		SHORT_FILM,
 		/**
 		 * An unknown value was provided; provide the value in a bug ticket for future inclusion
 		 */
