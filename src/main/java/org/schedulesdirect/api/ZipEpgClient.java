@@ -24,6 +24,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -113,6 +114,7 @@ public class ZipEpgClient extends EpgClient {
 	private Map<String, Program> progCache;
 	private boolean closed;
 	private boolean detailsFetched;
+	private boolean existingVfs;
 
 	/**
 	 * Constructor
@@ -132,10 +134,19 @@ public class ZipEpgClient extends EpgClient {
 		super(null);
 		src = zip;
 		progCache = new HashMap<String, Program>();
+		URI fsUri;
 		try {
-			this.vfs = FileSystems.newFileSystem(new URI(String.format("jar:%s", zip.toURI())), Collections.<String, Object>emptyMap());
+			fsUri = new URI(String.format("jar:%s", zip.toURI()));
 		} catch (URISyntaxException e1) {
 			throw new RuntimeException(e1);
+		}
+		
+		try {
+			this.vfs = FileSystems.newFileSystem(fsUri, Collections.<String, Object>emptyMap());
+			existingVfs = false;
+		} catch(FileSystemAlreadyExistsException e) {
+			this.vfs = FileSystems.getFileSystem(fsUri);
+			existingVfs = true;
 		}
 		Path verFile = vfs.getPath(ZIP_VER_FILE);
 		if(Files.exists(verFile)) {
@@ -197,9 +208,11 @@ public class ZipEpgClient extends EpgClient {
 			String vfsKey = getSrcZipKey(src);
 			AtomicInteger i = CLNT_COUNT.get(vfsKey);
 			int v = i != null ? i.decrementAndGet() : 0;
-			if(v == 0) {
+			if(v == 0 && !existingVfs) {
 				LOG.debug("Calling close() for " + vfsKey);
 				vfs.close();
+			} else if(existingVfs) { 
+				LOG.debug("Not closing filesystem object: created from getFileSystem()");
 			} else if(LOG.isDebugEnabled())
 				LOG.debug(String.format("Skipped close() for %s; c=%d", vfsKey, i != null ? i.get() : Integer.MIN_VALUE));
 			closed = true;
