@@ -169,7 +169,7 @@ public class Lineup {
 	private void buildChannelMapViaJsonData() throws JSONException {
 		for(int i = 0; i < channelMap.length(); ++i) {
 			JSONObject o = channelMap.getJSONObject(i);
-			List<String> list = stationMap.get(o.getInt("stationID"));
+			List<String> list = stationMap.get(o.getString("stationID"));
 			if(list == null) {
 				list = new ArrayList<String>();
 				stationMap.put(o.getString("stationID"), list);
