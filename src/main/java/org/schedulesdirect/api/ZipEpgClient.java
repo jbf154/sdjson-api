@@ -229,26 +229,30 @@ public class ZipEpgClient extends EpgClient {
 	protected Airing[] fetchSchedule(final Station station) throws IOException {
 		if(closed)
 			throw new IllegalStateException("Instance has already been closed!");
-		List<Airing> airs = new ArrayList<Airing>();
-		String input = null;
-		JSONObject o = null;
-		try(InputStream ins = Files.newInputStream(vfs.getPath(String.format("schedules/%s.txt", scrubFileName(station.getId()))))) {
-			input = IOUtils.toString(ins, ZIP_CHARSET.toString());
-			try {
-				o = new JSONObject(input);
-			} catch(JSONException e) {
-				throw new JsonEncodingException(String.format("Schedule[%s]: %s", station.getId(), e.getMessage()), e, input);
+		List<Airing> airs = new ArrayList<>();
+		Path path = vfs.getPath(String.format("schedules/%s.txt", scrubFileName(station.getId())));
+		if(Files.exists(path)) {
+			String input = null;
+			JSONObject o = null;
+			try(InputStream ins = Files.newInputStream(path)) {
+				input = IOUtils.toString(ins, ZIP_CHARSET.toString());
+				try {
+					o = new JSONObject(input);
+				} catch(JSONException e) {
+					throw new JsonEncodingException(String.format("Schedule[%s]: %s", station.getId(), e.getMessage()), e, input);
+				}
+				JSONArray jarr = o.getJSONArray("programs");
+				for(int i = 0; i < jarr.length(); ++i) {
+					JSONObject src = jarr.getJSONObject(i);
+					Program p = fetchProgram(src.getString("programID"));
+					if(p != null)
+						airs.add(new Airing(src, p, station));
+				}
+			} catch (JSONException e) {
+				throw new InvalidJsonObjectException(String.format("Schedule[%s]: %s", station.getId(), e.getMessage()), e, o.toString(3));
 			}
-			JSONArray jarr = o.getJSONArray("programs");
-			for(int i = 0; i < jarr.length(); ++i) {
-				JSONObject src = jarr.getJSONObject(i);
-				Program p = fetchProgram(src.getString("programID"));
-				if(p != null)
-					airs.add(new Airing(src, p, station));
-			}
-		} catch (JSONException e) {
-			throw new InvalidJsonObjectException(String.format("Schedule[%s]: %s", station.getId(), e.getMessage()), e, o.toString(3));
-		}
+		} else if(LOG.isDebugEnabled())
+			LOG.debug("Requested schedule not available in cache: " + station.getId());
 		return airs.toArray(new Airing[0]);
 	}
 
@@ -258,23 +262,26 @@ public class ZipEpgClient extends EpgClient {
 			throw new IllegalStateException("Instance has already been closed!");
 		Program p = progCache.get(progId);
 		if(p == null) {
-			try(InputStream ins = Files.newInputStream(vfs.getPath(String.format("programs/%s.txt", scrubFileName(progId))))) {
-				String data = IOUtils.toString(ins, ZIP_CHARSET.toString());
-				if(data != null) {
-					JSONObject obj;
-					try {
-						obj = new JSONObject(data);
-					} catch(JSONException e) {
-						throw new JsonEncodingException(String.format("ZipProgram[%s]: %s", progId, e.getMessage()), e, data);
+			Path path = vfs.getPath(String.format("programs/%s.txt", scrubFileName(progId)));
+			if(Files.exists(path)) {
+				try(InputStream ins = Files.newInputStream(path)) {
+					String data = IOUtils.toString(ins, ZIP_CHARSET.toString());
+					if(data != null) {
+						JSONObject obj;
+						try {
+							obj = new JSONObject(data);
+						} catch(JSONException e) {
+							throw new JsonEncodingException(String.format("ZipProgram[%s]: %s", progId, e.getMessage()), e, data);
+						}
+						String cachedMd5 = obj.optString("md5", "");
+						if(cachedMd5 != null && !"".equals(cachedMd5)) {
+							p = new Program(obj);
+							progCache.put(progId, p);
+						}
 					}
-					String cachedMd5 = obj.optString("md5", "");
-					if(cachedMd5 != null && !"".equals(cachedMd5)) {
-						p = new Program(obj);
-						progCache.put(progId, p);
-					}
+				} catch (JSONException e) {
+					throw new IOException("JSON error!", e);
 				}
-			} catch (JSONException e) {
-				throw new IOException("JSON error!", e);
 			}
 		}
 		return p;

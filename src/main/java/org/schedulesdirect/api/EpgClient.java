@@ -142,7 +142,7 @@ public abstract class EpgClient {
 	/**
 	 * Fetch a single airing schedule for the given Station reference
 	 * @param station The station to fetch the airing schedule for
-	 * @return An array of Airing objects representing the airing schedule for the given Station
+	 * @return An array of Airing objects representing the airing schedule for the given Station; empty array if schedule data isn't available
 	 * @throws IOException Thrown on any IO error accessing the schedule data
 	 */
 	abstract protected Airing[] fetchSchedule(final Station station) throws IOException;
@@ -178,7 +178,7 @@ public abstract class EpgClient {
 	/**
 	 * Fetch a single Program object
 	 * @param progId The program id to fetch
-	 * @return The Program instance for the given program id
+	 * @return The Program instance for the given program id or null if unavailable
 	 * @throws IOException Thrown on any IO error accessing the data
 	 */
 	abstract protected Program fetchProgram(final String progId) throws IOException;
