@@ -16,12 +16,11 @@
 package org.schedulesdirect.api;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.Properties;
 import java.util.TimeZone;
-import java.util.jar.JarInputStream;
-import java.util.jar.Manifest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -42,37 +41,24 @@ public final class Config {
 	 */
 	static public final String API_VERSION = initApiVersion();
 	static private String initApiVersion() {
-		for(String p : System.getProperty("java.class.path").split(System.getProperty("path.separator"))) {
-			File jar = new File(p);
-			String jarName = jar.getName();
-			if(jarName.startsWith("sdjson") && jarName.endsWith(".jar")) {
-				JarInputStream jfs = null;
-				try {
-					jfs = new JarInputStream(new FileInputStream(jar));
-					Manifest mf = jfs.getManifest();
-					String ver = mf.getMainAttributes().getValue("sdjson-version");
-					return ver != null ? ver : "Unknown";
-				} catch (IOException e) {
-					LOG.error("IOError grabbing API version", e);
-					return "Unknown";
-				} finally {
-					if(jfs != null)
-						try {
-							jfs.close();
-						} catch (IOException e) {
-							LOG.warn("IOError on close()", e);
-						}
-				}
-			}
+		try(InputStream apiProps = Config.class.getResourceAsStream("/sdjson-api.properties")) {
+			if(apiProps != null) {
+				Properties p = new Properties();
+				p.load(apiProps);
+				return p.getProperty("version");
+			}			
+		} catch(IOException e) {
+			LOG.error("IOError", e);
+			return "unknown";
 		}
-		LOG.warn("Unable to determine API version!  Setting to 'Unknown'.");
-		return "Unknown";
+		LOG.warn("Unable to determine API version!  Setting to 'unknown'.");
+		return "unknown";
 	}
 
 	/**
 	 * The default URL for contacting the Schedules Direct JSON data feed server
 	 */
-	static public final String DEFAULT_BASE_URL = "https://data2.schedulesdirect.org";
+	static public final String DEFAULT_BASE_URL = "https://json.schedulesdirect.org";
 	static private Config INSTANCE = null;
 	/**
 	 * Obtain the singleton instance of the Config class
