@@ -39,7 +39,8 @@ public class SampleData {
 
 	public enum SampleType {
 		PROGRAMS,
-		SCHEDULES
+		SCHEDULES,
+		LINEUPS
 	}
 	
 	private static void grabSample(SampleType type, File target) throws IOException {
@@ -47,7 +48,7 @@ public class SampleData {
 			NetworkEpgClient clnt = new NetworkEpgClient(TestConfig.TEST_PROPS.getProperty("SD_USER"), TestConfig.TEST_PROPS.getProperty("SD_PWD"), null, TestConfig.TEST_PROPS.getProperty("SD_URL"), false, JsonRequestFactory.get());
 			target.getParentFile().mkdirs();
 			try(
-				InputStream ins = clnt.submitRequest(JsonRequestFactory.get().get(JsonRequest.Action.GET, String.format("%s/%s", "sample", type.toString().toLowerCase())), null);
+				InputStream ins = clnt.submitRequest(JsonRequestFactory.get().get(JsonRequest.Action.GET, String.format("sample/%s%s", type.toString().toLowerCase(), type != SampleType.LINEUPS ? "" : "?type=cable")), null);
 				Writer w = new OutputStreamWriter(new FileOutputStream(target), "UTF-8")
 			) {
 				IOUtils.copy(ins, w);
