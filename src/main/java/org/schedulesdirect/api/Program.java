@@ -238,6 +238,24 @@ public class Program {
 		}
 	}
 
+	static private String parseDesc(JSONArray src) {
+		return src != null ? src.getJSONObject(findEnDescIndex(src)).getString("description") : "";
+	}
+	
+	static private int findEnDescIndex(JSONArray src) {
+		int retVal = 0;
+		if(src.length() > 1) {
+			for(int i = 0; i < src.length(); ++i) {
+				JSONObject o = src.getJSONObject(i);
+				if(o.getString("descriptionLanguage").equals("en")) {
+					retVal = i;
+					break;
+				}
+			}
+		}
+		return retVal;
+	}
+	
 	static private final Set<String> WARNED_SHOW_TYPES = new HashSet<>();
 	static private final Set<String> WARNED_SRC_TYPES = new HashSet<>();
 	static private final Set<String> WARNED_COLOR_CODES = new HashSet<>();
@@ -343,11 +361,11 @@ public class Program {
 			JSONObject descs = src.optJSONObject("descriptions");
 			shortDescriptions = new String[4];
 			if(descs != null) {
-				description = descs.optString("description1000");
-				shortDescriptions[0] = descs.optString("description255");
-				shortDescriptions[1] = descs.optString("description100");
-				shortDescriptions[2] = descs.optString("description60");
-				shortDescriptions[3] = descs.optString("description40");
+				description = parseDesc(descs.optJSONArray("description1000"));
+				shortDescriptions[0] = parseDesc(descs.optJSONArray("description255"));
+				shortDescriptions[1] = parseDesc(descs.optJSONArray("description100"));
+				shortDescriptions[2] = parseDesc(descs.optJSONArray("description60"));
+				shortDescriptions[3] = parseDesc(descs.optJSONArray("description40"));
 				Arrays.sort(shortDescriptions, new Comparator<String>() {
 
 					@Override
@@ -365,8 +383,8 @@ public class Program {
 				});
 				if(description.length() == 0 && shortDescriptions[0].length() > 0)
 					description = shortDescriptions[0];
-				alternateDescription = descs.optString("alternateDescription255");
-				alternateDescriptionShort = descs.optString("alternateDescription100");
+				alternateDescription = parseDesc(descs.optJSONArray("alternateDescription255"));
+				alternateDescriptionShort = parseDesc(descs.optJSONArray("alternateDescription100"));
 			} else {
 				final String EMPTY = "";
 				description = EMPTY;

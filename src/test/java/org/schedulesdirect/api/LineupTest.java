@@ -85,7 +85,6 @@ public class LineupTest extends SdjsonTestSuite {
 				Lineup l = new Lineup("Test Lineup", "Test Location", "/20131021/lineups/CAN-OTA-A0A0A0", "Cable", clnt);
 				when(clnt.fetchChannelMapping(l)).thenReturn(SAMPLE_DATA.get(i));
 				l.fetchDetails(false);
-				System.out.println(l.getStationMap());
 			} catch(IOException e) {
 				sb.append(String.format("\t(line %d) %s%n", i + 1, e.getMessage()));
 				SAMPLE_DATA.set(i, null);
