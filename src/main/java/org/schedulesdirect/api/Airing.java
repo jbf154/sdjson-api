@@ -16,10 +16,14 @@
 package org.schedulesdirect.api;
 
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
@@ -61,11 +65,6 @@ public class Airing {
 		 * This airing is in Dolby Digital sound
 		 */
 		DD,
-		
-		/**
-		 * This airing is in Dolby Surround Sound
-		 */
-		DSS,
 		
 		/**
 		 * This airing is in Dolby sound
@@ -170,28 +169,6 @@ public class Airing {
 	}
 
 	/**
-	 * Represents the TV rating of an airing
-	 * @author Derek Battams &lt;derek@battams.ca&gt;
-	 *
-	 */
-	static public enum TvRating {
-		/**
-		 * No rating data was provided for the airing; this is valid and acceptable
-		 */
-		NONE,
-		TVMA,
-		TVG,
-		TVPG,
-		TV14,
-		TVY,
-		TVY7,
-		/**
-		 * An unknown value was provided (perhaps a new rating?); report the unknown value as bug ticket for furture inclusion
-		 */
-		UNKNOWN
-	}
-
-	/**
 	 * Represents the content type of the airing
 	 * @author Derek Battams &lt;derek@battams.ca&gt;
 	 *
@@ -217,24 +194,19 @@ public class Airing {
 	private boolean leftInProgress;
 	private String contentSource;
 	private int partNum;
-	private boolean sexualContent;
 	private boolean closedCaptioned;
 	private boolean stereo;
 	private boolean newAiring;
 	private int duration;
-	private boolean suggestiveDialog;
 	private int totalParts;
 	private DolbyStatus dolbyStatus;
 	private LiveStatus liveStatus;
 	private boolean hdtv;
 	private PremiereStatus premiereStatus;
 	private FinaleStatus finaleStatus;
-	private TvRating tvRating;
-	private boolean fantasyViolenceContent;
+	private ContentRating[] tvRatings;
 	private ContentType contentType;
-	private boolean violentContent;
 	private boolean letterboxed;
-	private boolean matureLanguage;
 	private Date gmtStart;
 	private boolean descriptiveVideo;
 	private boolean is3d;
@@ -271,15 +243,35 @@ public class Airing {
 				throw new IllegalArgumentException("Received Program does not match id of Airing!");
 			duration = Integer.parseInt(src.get("duration").toString());
 			gmtStart = Config.get().getDateTimeFormat().parse(src.getString("airDateTime"));
-
+			JSONArray audioOpts = src.optJSONArray("audioProperties");
+			dolbyStatus = DolbyStatus.NONE;
+			if(audioOpts != null) {
+				for(int i = 0; i < audioOpts.length(); ++i) {
+					String val = audioOpts.getString(i);
+					switch(val) {
+						case "cc": closedCaptioned = true; break;
+						case "stereo": stereo = true; break;
+						case "dvs": descriptiveVideo = true; break;
+						case "subtitled": subtitled = true; break;
+						default:
+							if(val.startsWith("D")) { // This is a Dolby marker
+								try {
+									dolbyStatus = DolbyStatus.valueOf(val);
+								} catch(IllegalArgumentException e) {
+									LOG.warn(String.format("Unknown DolbyStatus encountered! [%s]", val));
+									dolbyStatus = DolbyStatus.UNKNOWN;
+								}								
+							} else
+								LOG.warn(String.format("Unknown audio property encountered! [%s]", val));
+					}
+				}
+			}
 			timeApproximate = src.optBoolean("timeApproximate");
-			subtitled = src.optBoolean("subtitled");
 			if(subtitled && src.has("subtitledLanguage"))
 				subtitleLanguage = src.getString("subtitledLanguage");
 			sap = src.optBoolean("sap");
 			if(sap && src.has("sapLanguage"))
 				sapLanguage = src.getString("sapLanguage");
-			enhanced = src.optBoolean("enhanced");
 			cableInTheClassroom = src.optBoolean("cableInTheClassroom");
 			subjectToBlackout = src.optBoolean("subjectToBlackout");
 			educational = src.optBoolean("educational");
@@ -287,19 +279,8 @@ public class Airing {
 			leftInProgress = src.optBoolean("leftInProgress");
 			contentSource = src.optString("netSyndicationSource");
 			partNum = src.optInt("partNumber");
-			sexualContent = src.optBoolean("hasSexRating");
-			closedCaptioned = src.optBoolean("cc");
-			stereo = src.optBoolean("stereo");
 			newAiring = src.optBoolean("new");
-			suggestiveDialog = src.optBoolean("dialogRating");
 			totalParts = src.optInt("numberOfParts");
-			String dolby = src.optString("dolby", DolbyStatus.NONE.toString()).toUpperCase().replaceAll("\\.", "");
-			try {
-				dolbyStatus = dolby.length() == 0 ? DolbyStatus.NONE : DolbyStatus.valueOf(dolby);
-			} catch(IllegalArgumentException e) {
-				LOG.warn(String.format("Unknown DolbyStatus encountered! [%s]", dolby));
-				dolbyStatus = DolbyStatus.UNKNOWN;
-			}
 			String live = src.optString("liveTapeDelay", LiveStatus.NONE.toString()).toUpperCase();
 			try {
 				liveStatus = live.length() == 0 ? LiveStatus.NONE : LiveStatus.valueOf(live);
@@ -307,7 +288,18 @@ public class Airing {
 				LOG.warn(String.format("Unknown LiveStatus encountered! [%s]", live));
 				liveStatus = LiveStatus.UNKNOWN;
 			}
-			hdtv = src.optBoolean("hdtv");
+			JSONArray videoOpts = src.optJSONArray("videoProperties");
+			if(videoOpts != null)  {
+				for(int i = 0; i < videoOpts.length(); ++i) {
+					String val = videoOpts.getString(i);
+					switch(val) {
+						case "hdtv": hdtv = true; break;
+						case "letterbox": letterboxed = true; break;
+						case "enhanced": enhanced = true; break;
+						case "3d": is3d = true; break;
+					}
+				}
+			}
 			String premiereFinale = src.optString("isPremiereOrFinale").toUpperCase().replace(' ', '_');
 			if(premiereFinale.length() == 0) {
 				premiereStatus = PremiereStatus.NONE;
@@ -329,26 +321,27 @@ public class Airing {
 					finaleStatus = FinaleStatus.UNKNOWN;
 				}
 			}
-			String rating = src.optString("tvRating");
-			try {
-				tvRating = rating.length() == 0 ? TvRating.NONE : TvRating.valueOf(rating);
-			} catch(IllegalArgumentException e) {
-				LOG.warn(String.format("Unknown TvRating encountered! [%s]", rating));
-				tvRating = TvRating.UNKNOWN;
-			}
-			fantasyViolenceContent = src.optBoolean("hasFantasyViolencerating");
-			String content = src.optString("netSyndicationType").toUpperCase().replace(' ', '_');
-			try {
-				contentType = content.length() == 0 ? ContentType.NONE : ContentType.valueOf(content);
-			} catch(IllegalArgumentException e) {
-				LOG.warn(String.format("Unknwon ContentType encountered! [%s]", content));
-				contentType = ContentType.UNKNOWN;
-			}
-			violentContent = src.optBoolean("hasViolenceRating");
-			letterboxed = src.optBoolean("letterbox");
-			matureLanguage = src.optBoolean("hasLanguageRating");
-			descriptiveVideo = src.optBoolean("dvs");
-			is3d = src.optBoolean("is3d");
+			JSONArray ratings = src.optJSONArray("contentRating");
+			if(ratings != null) {
+				Collection<ContentRating> ratingsColl = new ArrayList<>();
+				for(int i = 0; i < ratings.length(); ++i) {
+					JSONObject o = ratings.getJSONObject(i);
+					ratingsColl.add(new ContentRating(o.getString("body"), o.getString("code")));
+				}
+				tvRatings = ratingsColl.toArray(new ContentRating[0]);
+			} else
+				tvRatings = new ContentRating[0];
+			JSONObject content = src.optJSONObject("syndication");
+			if(content != null) {
+				try {
+					String type = content.getString("type").toUpperCase().replace(' ', '_');
+					contentType = type.length() == 0 ? ContentType.NONE : ContentType.valueOf(type);
+				} catch(IllegalArgumentException e) {
+					LOG.warn(String.format("Unknwon ContentType encountered! [%s]", content));
+					contentType = ContentType.UNKNOWN;
+				}				
+			} else
+				contentType = ContentType.NONE;
 			broadcastLanguage = src.optString("programLanguage", null);
 		} catch(JSONException | ParseException e) {
 			throw new InvalidJsonObjectException(String.format("Airing[%s]: %s", id, e.getMessage()), e, src.toString(3));
@@ -415,13 +408,6 @@ public class Airing {
 	}
 
 	/**
-	 * @return True if this airing contains sexually suggestive content or false otherwise
-	 */
-	public boolean isSexualContent() {
-		return sexualContent;
-	}
-
-	/**
 	 * @return True if this airing is closed captioned or false otherwise
 	 */
 	public boolean isClosedCaptioned() {
@@ -447,13 +433,6 @@ public class Airing {
 	 */
 	public int getDuration() {
 		return duration;
-	}
-
-	/**
-	 * @return True if this airing contains suggestive dialog or false otherwise
-	 */
-	public boolean isSuggestiveDialog() {
-		return suggestiveDialog;
 	}
 
 	/**
@@ -499,10 +478,10 @@ public class Airing {
 	}
 
 	/**
-	 * @return Returns the assigned TV rating for this airing
+	 * @return Returns the assigned TV ratings for this airing
 	 */
-	public TvRating getTvRating() {
-		return tvRating;
+	public ContentRating[] getTvRatings() {
+		return tvRatings;
 	}
 
 	/**
@@ -513,13 +492,6 @@ public class Airing {
 	}
 
 	/**
-	 * @return True if this airing contains fantasy violence or false otherwise
-	 */
-	public boolean isFantasyViolenceContent() {
-		return fantasyViolenceContent;
-	}
-
-	/**
 	 * @return Returns the content type of this airing
 	 */
 	public ContentType getContentType() {
@@ -527,24 +499,10 @@ public class Airing {
 	}
 
 	/**
-	 * @return True if this airing contains violent content or false otherwise
-	 */
-	public boolean isViolentContent() {
-		return violentContent;
-	}
-
-	/**
 	 * @return True if this airing is letterboxed or false otherwise
 	 */
 	public boolean isLetterboxed() {
 		return letterboxed;
-	}
-
-	/**
-	 * @return True if this airing contains mature language or false otherwise
-	 */
-	public boolean isMatureLanguage() {
-		return matureLanguage;
 	}
 
 	/**
@@ -617,90 +575,6 @@ public class Airing {
 		return timeApproximate;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Airing [id=");
-		builder.append(id);
-		builder.append(", subjectToBlackout=");
-		builder.append(subjectToBlackout);
-		builder.append(", educational=");
-		builder.append(educational);
-		builder.append(", joinedInProgress=");
-		builder.append(joinedInProgress);
-		builder.append(", leftInProgress=");
-		builder.append(leftInProgress);
-		builder.append(", contentSource=");
-		builder.append(contentSource);
-		builder.append(", partNum=");
-		builder.append(partNum);
-		builder.append(", sexualContent=");
-		builder.append(sexualContent);
-		builder.append(", closedCaptioned=");
-		builder.append(closedCaptioned);
-		builder.append(", stereo=");
-		builder.append(stereo);
-		builder.append(", newAiring=");
-		builder.append(newAiring);
-		builder.append(", duration=");
-		builder.append(duration);
-		builder.append(", suggestiveDialog=");
-		builder.append(suggestiveDialog);
-		builder.append(", totalParts=");
-		builder.append(totalParts);
-		builder.append(", dolbyStatus=");
-		builder.append(dolbyStatus);
-		builder.append(", liveStatus=");
-		builder.append(liveStatus);
-		builder.append(", hdtv=");
-		builder.append(hdtv);
-		builder.append(", premiereStatus=");
-		builder.append(premiereStatus);
-		builder.append(", finaleStatus=");
-		builder.append(finaleStatus);
-		builder.append(", tvRating=");
-		builder.append(tvRating);
-		builder.append(", fantasyViolenceContent=");
-		builder.append(fantasyViolenceContent);
-		builder.append(", contentType=");
-		builder.append(contentType);
-		builder.append(", violentContent=");
-		builder.append(violentContent);
-		builder.append(", letterboxed=");
-		builder.append(letterboxed);
-		builder.append(", matureLanguage=");
-		builder.append(matureLanguage);
-		builder.append(", gmtStart=");
-		builder.append(gmtStart);
-		builder.append(", descriptiveVideo=");
-		builder.append(descriptiveVideo);
-		builder.append(", is3d=");
-		builder.append(is3d);
-		builder.append(", cableInTheClassroom=");
-		builder.append(cableInTheClassroom);
-		builder.append(", enhanced=");
-		builder.append(enhanced);
-		builder.append(", sap=");
-		builder.append(sap);
-		builder.append(", sapLanguage=");
-		builder.append(sapLanguage);
-		builder.append(", subtitled=");
-		builder.append(subtitled);
-		builder.append(", subtitleLanguage=");
-		builder.append(subtitleLanguage);
-		builder.append(", timeApproximate=");
-		builder.append(timeApproximate);
-		builder.append(", station=");
-		builder.append(station.getId());
-		builder.append(", program=");
-		builder.append(program);
-		builder.append("]");
-		return builder.toString();
-	}
-
 	/**
 	 * Modify this Airing's unique id; this is the id of the Program that this Airing represents
 	 * @param id The unique id for this Airing
@@ -755,13 +629,6 @@ public class Airing {
 	}
 
 	/**
-	 * @param sexualContent the sexualContent to set
-	 */
-	public void setSexualContent(boolean sexualContent) {
-		this.sexualContent = sexualContent;
-	}
-
-	/**
 	 * @param closedCaptioned the closedCaptioned to set
 	 */
 	public void setClosedCaptioned(boolean closedCaptioned) {
@@ -787,13 +654,6 @@ public class Airing {
 	 */
 	public void setDuration(int duration) {
 		this.duration = duration;
-	}
-
-	/**
-	 * @param suggestiveDialog the suggestiveDialog to set
-	 */
-	public void setSuggestiveDialog(boolean suggestiveDialog) {
-		this.suggestiveDialog = suggestiveDialog;
 	}
 
 	/**
@@ -841,15 +701,8 @@ public class Airing {
 	/**
 	 * @param tvRating the tvRating to set
 	 */
-	public void setTvRating(TvRating tvRating) {
-		this.tvRating = tvRating;
-	}
-
-	/**
-	 * @param fantasyViolenceContent the fantasyViolenceContent to set
-	 */
-	public void setFantasyViolenceContent(boolean fantasyViolenceContent) {
-		this.fantasyViolenceContent = fantasyViolenceContent;
+	public void setTvRatings(ContentRating[] tvRatings) {
+		this.tvRatings = tvRatings;
 	}
 
 	/**
@@ -860,24 +713,10 @@ public class Airing {
 	}
 
 	/**
-	 * @param violentContent the violentContent to set
-	 */
-	public void setViolentContent(boolean violentContent) {
-		this.violentContent = violentContent;
-	}
-
-	/**
 	 * @param letterboxed the letterboxed to set
 	 */
 	public void setLetterboxed(boolean letterboxed) {
 		this.letterboxed = letterboxed;
-	}
-
-	/**
-	 * @param matureLanguage the matureLanguage to set
-	 */
-	public void setMatureLanguage(boolean matureLanguage) {
-		this.matureLanguage = matureLanguage;
 	}
 
 	/**
@@ -1046,5 +885,60 @@ public class Airing {
 			return false;
 		}
 		return true;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final int maxLen = 2;
+		return "Airing [id="
+				+ id
+				+ ", subjectToBlackout="
+				+ subjectToBlackout
+				+ ", educational="
+				+ educational
+				+ ", joinedInProgress="
+				+ joinedInProgress
+				+ ", leftInProgress="
+				+ leftInProgress
+				+ ", contentSource="
+				+ contentSource
+				+ ", partNum="
+				+ partNum
+				+ ", closedCaptioned="
+				+ closedCaptioned
+				+ ", stereo="
+				+ stereo
+				+ ", newAiring="
+				+ newAiring
+				+ ", duration="
+				+ duration
+				+ ", totalParts="
+				+ totalParts
+				+ ", dolbyStatus="
+				+ dolbyStatus
+				+ ", liveStatus="
+				+ liveStatus
+				+ ", hdtv="
+				+ hdtv
+				+ ", premiereStatus="
+				+ premiereStatus
+				+ ", finaleStatus="
+				+ finaleStatus
+				+ ", tvRatings="
+				+ (tvRatings != null ? Arrays.asList(tvRatings).subList(0,
+						Math.min(tvRatings.length, maxLen)) : null)
+				+ ", contentType=" + contentType + ", letterboxed="
+				+ letterboxed + ", gmtStart=" + gmtStart
+				+ ", descriptiveVideo=" + descriptiveVideo + ", is3d=" + is3d
+				+ ", cableInTheClassroom=" + cableInTheClassroom
+				+ ", enhanced=" + enhanced + ", sap=" + sap + ", sapLanguage="
+				+ sapLanguage + ", subtitled=" + subtitled
+				+ ", subtitleLanguage=" + subtitleLanguage
+				+ ", timeApproximate=" + timeApproximate
+				+ ", broadcastLanguage=" + broadcastLanguage + ", station="
+				+ station + ", program=" + program + "]";
 	}
 }

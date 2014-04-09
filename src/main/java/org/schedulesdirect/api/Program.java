@@ -19,6 +19,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -138,26 +139,6 @@ public class Program {
 		UNKNOWN
 	}
 	
-	/**
-	 * The MPAA rating of this program; typically only provided for movies and will always be set to NONE for non-movies
-	 * @author Derek Battams &lt;derek@battams.ca&gt;
-	 *
-	 */
-	static public enum MPAARating {
-		NONE,
-		AO,
-		G,
-		NC17,
-		NR,
-		PG13,
-		PG,
-		R,
-		/**
-		 * An unknown value was provided; provide the value in a bug ticket for future inclusion
-		 */
-		UNKNOWN
-	}
-
 	/**
 	 * Represents the role of cast &amp; crew members of a program
 	 * @author Derek Battams &lt;derek@battams.ca&gt;
@@ -281,7 +262,7 @@ public class Program {
 	private Date gameStart;
 	private String holiday;
 	private String md5;
-	private MPAARating mpaaRating;
+	private ContentRating[] ratings;
 	private String countryOfOrigin;
 	private String studio;
 	private int runTime;
@@ -346,12 +327,16 @@ public class Program {
 			runTime = movieInfo != null && movieInfo.has("runTime") ? movieInfo.getInt("runTime") : 0;
 			studio = movieInfo != null && movieInfo.has("origStudio") ? movieInfo.getString("origStudio") : null;
 			countryOfOrigin = movieInfo != null && movieInfo.has("origCountry") ? movieInfo.getString("origCountry") : null;
-			try {
-				mpaaRating = movieInfo != null && movieInfo.has("mpaaRating") ? MPAARating.valueOf(movieInfo.getString("mpaaRating").replaceAll("-", "")) : MPAARating.NONE;
-			} catch(IllegalArgumentException e) {
-				LOG.warn(String.format("Unknown MPAARating encountered! [%s]", src.getString("mpaa_rating")));
-				mpaaRating = MPAARating.UNKNOWN;
-			}
+			JSONArray ratings = src.optJSONArray("contentRating");
+			if(ratings != null) {
+				Collection<ContentRating> coll = new ArrayList<ContentRating>();
+				for(int i = 0; i < ratings.length(); ++i) {
+					JSONObject o = ratings.getJSONObject(i);
+					coll.add(new ContentRating(o.getString("body"), o.getString("code")));
+				}
+				this.ratings = coll.toArray(new ContentRating[0]);
+			} else
+				this.ratings = new ContentRating[0];
 			md5 = src.getString("md5");
 			holiday = src.has("holiday") ? src.getString("holiday") : null;
 			if(src.has("gameDatetime"))
@@ -402,8 +387,8 @@ public class Program {
 				credits = new Credit[0];
 			alternateTitle = src.optString("alternateTitle");
 			alternateEpisodeNumber = src.has("alternateSyndicatedEpisodeNumber") ? src.getString("alternateSyndicatedEpisodeNumber") : null;
-			if(src.has("advisories")) {
-				JSONArray arr = src.getJSONArray("advisories");
+			if(src.has("contentAdvisory")) {
+				JSONArray arr = src.getJSONArray("contentAdvisory");
 				List<String> vals = new ArrayList<String>();
 				for(int i = 0; i < arr.length(); ++i)
 					vals.add(arr.getString(i));
@@ -607,10 +592,10 @@ public class Program {
 	}
 
 	/**
-	 * @return Returns the MPAA rating of this program
+	 * @return Returns the ratings of this program
 	 */
-	public MPAARating getMpaaRating() {
-		return mpaaRating;
+	public ContentRating[] getRatings() {
+		return ratings;
 	}
 
 	/**
@@ -700,82 +685,79 @@ public class Program {
 	@Override
 	public String toString() {
 		final int maxLen = 2;
-		StringBuilder builder = new StringBuilder();
-		builder.append("Program [id=");
-		builder.append(id);
-		builder.append(", madeForTv=");
-		builder.append(madeForTv);
-		builder.append(", description=");
-		builder.append(description);
-		builder.append(", episodeTitle=");
-		builder.append(episodeTitle);
-		builder.append(", title=");
-		builder.append(title);
-		builder.append(", originalAirDate=");
-		builder.append(originalAirDate);
-		builder.append(", descriptionLanguage=");
-		builder.append(descriptionLanguage);
-		builder.append(", sourceType=");
-		builder.append(sourceType);
-		builder.append(", showType=");
-		builder.append(showType);
-		builder.append(", syndicatedEpisodeNumber=");
-		builder.append(syndicatedEpisodeNumber);
-		builder.append(", colorCode=");
-		builder.append(colorCode);
-		builder.append(", advisories=");
-		builder.append(advisories != null ? Arrays.asList(advisories).subList(
-				0, Math.min(advisories.length, maxLen)) : null);
-		builder.append(", alternateEpisodeNumber=");
-		builder.append(alternateEpisodeNumber);
-		builder.append(", alternateTitle=");
-		builder.append(alternateTitle);
-		builder.append(", credits=");
-		builder.append(credits != null ? Arrays.asList(credits).subList(0,
-				Math.min(credits.length, maxLen)) : null);
-		builder.append(", alternateDescription=");
-		builder.append(alternateDescription);
-		builder.append(", alternateDescriptionShort=");
-		builder.append(alternateDescriptionShort);
-		builder.append(", shortDescriptions=");
-		builder.append(shortDescriptions != null ? Arrays.asList(
-				shortDescriptions).subList(0,
-				Math.min(shortDescriptions.length, maxLen)) : null);
-		builder.append(", gameStart=");
-		builder.append(gameStart);
-		builder.append(", holiday=");
-		builder.append(holiday);
-		builder.append(", md5=");
-		builder.append(md5);
-		builder.append(", mpaaRating=");
-		builder.append(mpaaRating);
-		builder.append(", countryOfOrigin=");
-		builder.append(countryOfOrigin);
-		builder.append(", studio=");
-		builder.append(studio);
-		builder.append(", runTime=");
-		builder.append(runTime);
-		builder.append(", starRating=");
-		builder.append(starRating);
-		builder.append(", starRatingValue=");
-		builder.append(starRatingValue);
-		builder.append(", episodeNumber=");
-		builder.append(episodeNumber);
-		builder.append(", shortTitles=");
-		builder.append(shortTitles != null ? Arrays.asList(shortTitles)
-				.subList(0, Math.min(shortTitles.length, maxLen)) : null);
-		builder.append(", year=");
-		builder.append(year);
-		builder.append(", genres=");
-		builder.append(genres != null ? Arrays.asList(genres).subList(0,
-				Math.min(genres.length, maxLen)) : null);
-		builder.append(", metadata=");
-		builder.append(metadata != null ? metadata.subList(0,
-				Math.min(metadata.size(), maxLen)) : null);
-		builder.append(", seriesDescription=");
-		builder.append(seriesDescription);
-		builder.append("]");
-		return builder.toString();
+		return "Program [id="
+				+ id
+				+ ", madeForTv="
+				+ madeForTv
+				+ ", description="
+				+ description
+				+ ", episodeTitle="
+				+ episodeTitle
+				+ ", title="
+				+ title
+				+ ", originalAirDate="
+				+ originalAirDate
+				+ ", descriptionLanguage="
+				+ descriptionLanguage
+				+ ", sourceType="
+				+ sourceType
+				+ ", showType="
+				+ showType
+				+ ", syndicatedEpisodeNumber="
+				+ syndicatedEpisodeNumber
+				+ ", colorCode="
+				+ colorCode
+				+ ", advisories="
+				+ (advisories != null ? Arrays.asList(advisories).subList(0,
+						Math.min(advisories.length, maxLen)) : null)
+				+ ", alternateEpisodeNumber="
+				+ alternateEpisodeNumber
+				+ ", alternateTitle="
+				+ alternateTitle
+				+ ", credits="
+				+ (credits != null ? Arrays.asList(credits).subList(0,
+						Math.min(credits.length, maxLen)) : null)
+				+ ", alternateDescription="
+				+ alternateDescription
+				+ ", alternateDescriptionShort="
+				+ alternateDescriptionShort
+				+ ", shortDescriptions="
+				+ (shortDescriptions != null ? Arrays.asList(shortDescriptions)
+						.subList(0, Math.min(shortDescriptions.length, maxLen))
+						: null)
+				+ ", gameStart="
+				+ gameStart
+				+ ", holiday="
+				+ holiday
+				+ ", md5="
+				+ md5
+				+ ", ratings="
+				+ (ratings != null ? Arrays.asList(ratings).subList(0,
+						Math.min(ratings.length, maxLen)) : null)
+				+ ", countryOfOrigin="
+				+ countryOfOrigin
+				+ ", studio="
+				+ studio
+				+ ", runTime="
+				+ runTime
+				+ ", starRating="
+				+ starRating
+				+ ", starRatingValue="
+				+ starRatingValue
+				+ ", episodeNumber="
+				+ episodeNumber
+				+ ", shortTitles="
+				+ (shortTitles != null ? Arrays.asList(shortTitles).subList(0,
+						Math.min(shortTitles.length, maxLen)) : null)
+				+ ", year="
+				+ year
+				+ ", genres="
+				+ (genres != null ? Arrays.asList(genres).subList(0,
+						Math.min(genres.length, maxLen)) : null)
+				+ ", metadata="
+				+ (metadata != null ? metadata.subList(0,
+						Math.min(metadata.size(), maxLen)) : null)
+				+ ", seriesDescription=" + seriesDescription + "]";
 	}
 
 	/**
@@ -928,8 +910,8 @@ public class Program {
 	/**
 	 * @param mpaaRating the mpaaRating to set
 	 */
-	public void setMpaaRating(MPAARating mpaaRating) {
-		this.mpaaRating = mpaaRating;
+	public void setRatings(ContentRating[] ratings) {
+		this.ratings = ratings;
 	}
 
 	/**
