@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -108,31 +109,6 @@ public class Program {
 		SYNDICATED,
 		NETWORK,
 		BLOCK,
-		/**
-		 * An unknown value was provided; provide the value in a bug ticket for future inclusion
-		 */
-		UNKNOWN
-	}
-	
-	/**
-	 * The type of show this program is
-	 * @author Derek Battams &lt;derek@battams.ca&gt;
-	 *
-	 */
-	static public enum ShowType {
-		/**
-		 * No data was provided; value and acceptable
-		 */
-		NONE,
-		SERIES,
-		PAID_PROGRAMMING,
-		SPECIAL,
-		MINISERIES,
-		FEATURE_FILM,
-		TV_MOVIE,
-		SPORTS_EVENT,
-		SPORTS_NON_EVENT,
-		SHORT_FILM,
 		/**
 		 * An unknown value was provided; provide the value in a bug ticket for future inclusion
 		 */
@@ -237,7 +213,8 @@ public class Program {
 		return retVal;
 	}
 	
-	static private final Set<String> WARNED_SHOW_TYPES = new HashSet<>();
+	static public final Pattern MOVIE_REGEX = Pattern.compile("Feature Film|.*Movie");
+	
 	static private final Set<String> WARNED_SRC_TYPES = new HashSet<>();
 	static private final Set<String> WARNED_COLOR_CODES = new HashSet<>();
 	
@@ -249,7 +226,6 @@ public class Program {
 	private Date originalAirDate;
 	private String descriptionLanguage;
 	private SourceType sourceType;
-	private ShowType showType;
 	private String syndicatedEpisodeNumber;
 	private ColorCode colorCode;
 	private String[] advisories;
@@ -298,14 +274,6 @@ public class Program {
 					metadata.add(map);
 				}
 			}
-			if(src.has("genres")) {
-				List<String> vals = new ArrayList<String>();
-				JSONArray arr = src.getJSONArray("genres");
-				for(int i = 0; i < arr.length(); ++i)
-					vals.add(arr.getString(i));
-				genres = vals.toArray(new String[0]);
-			} else
-				genres = new String[0];
 			JSONObject movieInfo = src.optJSONObject("movie");
 			if(movieInfo != null && movieInfo.has("year"))
 				year = Integer.parseInt(movieInfo.get("year").toString());
@@ -408,14 +376,19 @@ public class Program {
 					LOG.warn(String.format("Unknown SourceType encountered! [%s]", srcType));
 				sourceType = SourceType.UNKNOWN;
 			}
-			String showVal = src.optString("showType", ShowType.NONE.toString()).toUpperCase().replaceAll("[^A-Z]", "_");
-			try {
-				showType = showVal.length() == 0 ? ShowType.NONE : ShowType.valueOf(showVal);
-			} catch(IllegalArgumentException e) {
-				if(WARNED_SHOW_TYPES.add(showVal))
-					LOG.warn(String.format("Unknown ShowType encountered! [%s]", showVal));
-				showType = ShowType.UNKNOWN;
+			List<String> genreVals = new ArrayList<>();
+			String showTypeVal = src.optString("showType");
+			if(showTypeVal != null && !"Series".equals(showTypeVal)) {
+				if(MOVIE_REGEX.matcher(showTypeVal).matches())
+					showTypeVal = "Movie";
+				genreVals.add(showTypeVal);
 			}
+			if(src.has("genres")) {
+				JSONArray arr = src.getJSONArray("genres");
+				for(int i = 0; i < arr.length(); ++i)
+					genreVals.add(arr.getString(i));
+			}
+			genres = genreVals.toArray(new String[0]);
 			syndicatedEpisodeNumber = src.optString("syndicatedEpisodeNumber");
 			String colorVal = src.optString("colorCode", ColorCode.NONE.toString()).toUpperCase().replaceAll(" & ", "").replaceAll(" +", "_");
 			try {
@@ -498,13 +471,6 @@ public class Program {
 	 */
 	public SourceType getSourceType() {
 		return sourceType;
-	}
-
-	/**
-	 * @return Returns the show type of this program
-	 */
-	public ShowType getShowType() {
-		return showType;
 	}
 
 	/**
@@ -701,8 +667,6 @@ public class Program {
 				+ descriptionLanguage
 				+ ", sourceType="
 				+ sourceType
-				+ ", showType="
-				+ showType
 				+ ", syndicatedEpisodeNumber="
 				+ syndicatedEpisodeNumber
 				+ ", colorCode="
@@ -814,13 +778,6 @@ public class Program {
 	 */
 	public void setSourceType(SourceType sourceType) {
 		this.sourceType = sourceType;
-	}
-
-	/**
-	 * @param showType the showType to set
-	 */
-	public void setShowType(ShowType showType) {
-		this.showType = showType;
 	}
 
 	/**
