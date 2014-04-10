@@ -146,7 +146,7 @@ public class ProgramTest extends SdjsonTestSuite {
 		JSONObject input = new JSONObject(getRandomSampleProgram());
 		JSONArray credits = new JSONArray();
 		credits.put(new JSONObject("{\"role\":\"bad role\",\"name\": \"John Doe\"}"));
-		input.put("castAndCrew", credits);
+		input.put("crew", credits);
 		Program p = new Program(input);
 		Credit[] array = p.getCredits();
 		assertEquals(1, array.length);
@@ -160,7 +160,7 @@ public class ProgramTest extends SdjsonTestSuite {
 		JSONObject input = new JSONObject(getRandomSampleProgram());
 		JSONArray credits = new JSONArray();
 		credits.put(new JSONObject("{\"role\":\"Guest Star\",\"name\": \"John Doe\"}"));
-		input.put("castAndCrew", credits);
+		input.put("cast", credits);
 		Program p = new Program(input);
 		Credit[] array = p.getCredits();
 		assertEquals(1, array.length);
@@ -174,7 +174,7 @@ public class ProgramTest extends SdjsonTestSuite {
 		JSONObject input = new JSONObject(getRandomSampleProgram());
 		JSONArray credits = new JSONArray();
 		credits.put("John Doe");
-		input.put("castAndCrew", credits);
+		input.put("crew", credits);
 		new Program(input);
 	}
 

@@ -345,14 +345,19 @@ public class Program {
 				alternateDescription = EMPTY;
 				alternateDescriptionShort = EMPTY;
 			}
-			if(src.has("castAndCrew")) {
-				List<Credit> vals = new ArrayList<Credit>();
-				JSONArray arr = src.getJSONArray("castAndCrew");
-				for(int i = 0; i < arr.length(); ++i)
-					vals.add(new Credit(arr.getJSONObject(i)));
-				credits = vals.toArray(new Credit[0]);
-			} else
-				credits = new Credit[0];
+			Collection<Credit> castAndCrew = new ArrayList<>();
+			if(src.has("cast")) {
+				JSONArray cast = src.getJSONArray("cast");
+				for(int i = 0; i < cast.length(); ++i)
+					castAndCrew.add(new Credit(cast.getJSONObject(i)));
+			}
+			if(src.has("crew")) {
+				JSONArray crew = src.getJSONArray("crew");
+				for(int i = 0; i < crew.length(); ++i)
+					castAndCrew.add(new Credit(crew.getJSONObject(i)));				
+			}
+			credits = castAndCrew.toArray(new Credit[0]);
+			
 			alternateTitle = src.optString("alternateTitle");
 			alternateEpisodeNumber = src.has("alternateSyndicatedEpisodeNumber") ? src.getString("alternateSyndicatedEpisodeNumber") : null;
 			if(src.has("contentAdvisory")) {
