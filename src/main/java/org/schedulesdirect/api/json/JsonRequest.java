@@ -25,6 +25,7 @@ import java.util.Date;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.fluent.Executor;
@@ -185,6 +186,11 @@ public final class JsonRequest {
 			if(action == Action.PUT || action == Action.POST)
 				audit.append(String.format(">>>input: %s%n", reqData));
 			HttpResponse resp = exe.execute(req).returnResponse();
+			if(LOG.isDebugEnabled()) {
+				Header h = resp.getFirstHeader("Schedulesdirect-Serverid");
+				String val = h != null ? h.getValue() : "[Unknown]";
+				LOG.debug(String.format("Request to '%s' handled by: %s", targetUrl, val));
+			}
 			StatusLine status = resp.getStatusLine();
 			audit.append(String.format("<<<resp_status: %s%n", status));
 			audit.append(String.format("<<<resp_headers:%n%s", HttpUtils.prettyPrintHeaders(resp.getAllHeaders(), "\t")));
