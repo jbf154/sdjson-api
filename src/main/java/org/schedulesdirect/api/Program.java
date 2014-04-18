@@ -51,6 +51,7 @@ import org.schedulesdirect.api.exception.InvalidJsonObjectException;
  */
 public class Program {
 	static private final Log LOG = LogFactory.getLog(Program.class);
+	static private final Set<String> WARNED_ROLES = new HashSet<>();
 	
 	/**
 	 * An empty Program object as a JSON string
@@ -130,6 +131,7 @@ public class Program {
 		CONTESTANT,
 		CORRESPONDENT,
 		DIRECTOR,
+		ASSISTANT_DIRECTOR,
 		EXECUTIVE_PRODUCER,
 		GUEST_STAR,
 		GUEST,
@@ -138,7 +140,22 @@ public class Program {
 		MUSICAL_GUEST,
 		NARRATOR,
 		PRODUCER,
-		WRITER
+		WRITER,
+		COSTUME_DESIGNER,
+		SET_DECORATION,
+		ART_DIRECTION,
+		PRODUCTION_DESIGNER,
+		CASTING,
+		FILM_EDITOR,
+		CINEMATOGRAPHER,
+		ORIGINAL_MUSIC,
+		ASSOCIATE_PRODUCER,
+		CASTING_DIRECTOR,
+		COMPOSER,
+		VOICE,
+		PRODUCTION_MANAGER,
+		DIRECTORY_OF_PHOTOGRAPHY,
+		VISUAL_EFFECTS
 	}
 	
 	/**
@@ -157,11 +174,24 @@ public class Program {
 		private Credit(JSONObject src) throws JSONException {
 			Role r = null;
 			String roleStr = src.getString("role");
+			if(roleStr.startsWith("Writer") || roleStr.contains("Screenwriter"))
+				roleStr = "Writer";
+			else if(roleStr.contains("Assistant Director"))
+				roleStr = "Assistant Director";
+			else if(roleStr.contains("Producer"))
+				roleStr = "Producer";
+			else if(roleStr.contains("Art Director"))
+				roleStr = "Art Direction";
+			else if(roleStr.contains("Production Design"))
+				roleStr = "Production Designer";
+			else if(roleStr.contains("Visual Effects"))
+				roleStr = "Visual Effects";
 			String name = src.getString("name");
 			try {
 				r = Role.valueOf(roleStr.toUpperCase().replace(' ', '_'));
 			} catch(IllegalArgumentException e) {
-				LOG.warn(String.format("Unknown Role encountered! [%s]", roleStr));
+				if(WARNED_ROLES.add(roleStr))
+					LOG.warn(String.format("Unknown Role encountered! [%s]", roleStr));
 				r = Role.UNKNOWN;
 			}
 			role = r;
@@ -192,6 +222,43 @@ public class Program {
 			builder.append(name);
 			builder.append("]");
 			return builder.toString();
+		}
+	}
+	
+	static public class Team {
+
+		private String name;
+		private boolean isHome;
+
+		/**
+		 * @param name
+		 * @param isHome
+		 */
+		protected Team(String name, boolean isHome) {
+			this.name = name;
+			this.isHome = isHome;
+		}
+
+		/**
+		 * @return the name
+		 */
+		public String getName() {
+			return name;
+		}
+
+		/**
+		 * @return the isHome
+		 */
+		public boolean isHome() {
+			return isHome;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return "Team [name=" + name + ", isHome=" + isHome + "]";
 		}
 	}
 
@@ -250,6 +317,8 @@ public class Program {
 	private String[] genres;
 	private List<Map<String, Object>> metadata;
 	private String seriesDescription;
+	private String venue;
+	private Team[] teams;
 	
 	/**
 	 * Consutrctor
@@ -402,6 +471,21 @@ public class Program {
 				if(WARNED_COLOR_CODES.add(colorVal))
 					LOG.warn(String.format("Unknown ColorCode encountered! [%s]", colorVal));
 				colorCode = ColorCode.UNKNOWN;
+			}
+			JSONObject event = src.optJSONObject("eventDetails");
+			if(event != null) {
+				List<Team> list = new ArrayList<>();
+				JSONArray teams = event.optJSONArray("teams");
+				if(teams != null)
+					for(int i = 0; i < teams.length(); ++i) {
+						JSONObject team = teams.getJSONObject(i);
+						list.add(new Team(team.getString("name"), team.optBoolean("isHome")));
+					}
+				this.teams = list.toArray(new Team[0]);
+				venue = event.optString("venue", null);
+			} else {
+				teams = new Team[0];
+				venue = null;
 			}
 		} catch (JSONException | ParseException e) {
 			throw new InvalidJsonObjectException(String.format("Program[%s]: %s", id, e.getMessage()), e, src.toString(3));
@@ -726,7 +810,13 @@ public class Program {
 				+ ", metadata="
 				+ (metadata != null ? metadata.subList(0,
 						Math.min(metadata.size(), maxLen)) : null)
-				+ ", seriesDescription=" + seriesDescription + "]";
+				+ ", seriesDescription="
+				+ seriesDescription
+				+ ", venue="
+				+ venue
+				+ ", teams="
+				+ (teams != null ? Arrays.asList(teams).subList(0,
+						Math.min(teams.length, maxLen)) : null) + "]";
 	}
 
 	/**
@@ -989,5 +1079,33 @@ public class Program {
 	 */
 	public void setSeriesDescription(String seriesDescription) {
 		this.seriesDescription = seriesDescription;
+	}
+
+	/**
+	 * @return the venue; typically only provided for (some) sports event programs or null otherwise
+	 */
+	public String getVenue() {
+		return venue;
+	}
+
+	/**
+	 * @param venue the venue to set
+	 */
+	public void setVenue(String venue) {
+		this.venue = venue;
+	}
+
+	/**
+	 * @return the teams; identifies teams competing in a sports event program; will be an empty array when not available/not applicable
+	 */
+	public Team[] getTeams() {
+		return teams;
+	}
+
+	/**
+	 * @param teams the teams to set
+	 */
+	public void setTeams(Team[] teams) {
+		this.teams = teams;
 	}
 }

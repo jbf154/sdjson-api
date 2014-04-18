@@ -191,10 +191,10 @@ public class Station {
 			affiliate = src.getString("affiliate");
 			JSONObject o = src.getJSONObject("broadcaster");
 			if(o != null) {
-				broadcasterState = o.getString("state");
-				broadcasterCity = o.getString("city");
-				broadcasterZip = o.getString("postalcode");
-				broadcasterCountry = o.getString("country");
+				broadcasterState = o.optString("state");
+				broadcasterCity = o.optString("city");
+				broadcasterZip = o.optString("postalcode");
+				broadcasterCountry = o.optString("country");
 			}
 			if(src.has("logo"))
 				logo = new Logo(src.getJSONObject("logo"));

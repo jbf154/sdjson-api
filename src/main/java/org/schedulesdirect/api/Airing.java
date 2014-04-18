@@ -256,7 +256,7 @@ public class Airing {
 						default:
 							if(val.startsWith("D")) { // This is a Dolby marker
 								try {
-									dolbyStatus = DolbyStatus.valueOf(val);
+									dolbyStatus = DolbyStatus.valueOf(val.replaceAll(" ", "").replaceAll("\\.", ""));
 								} catch(IllegalArgumentException e) {
 									LOG.warn(String.format("Unknown DolbyStatus encountered! [%s]", val));
 									dolbyStatus = DolbyStatus.UNKNOWN;
