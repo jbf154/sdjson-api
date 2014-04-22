@@ -37,11 +37,6 @@ public abstract class EpgClient {
 	static public final int API_VERSION = 20131021;
 	
 	/**
-	 * Name of the zip file entry containing the processing server
-	 */
-	static public final String SERVER_ID_ENTRY = "serverID.txt";
-	
-	/**
 	 * Given a lineup id, generate the full, absolute URI path for the lineup
 	 * @param id The unique lineup
 	 * @return The unique, absolute URI path for the lineup id
