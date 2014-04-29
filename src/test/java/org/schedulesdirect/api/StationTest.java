@@ -16,6 +16,7 @@
 package org.schedulesdirect.api;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 
@@ -76,5 +77,13 @@ public class StationTest extends SdjsonTestSuite {
 		Station s = new Station(new JSONObject(BASIC_STATION_JSON), null, mock(EpgClient.class));
 		assertEquals(360, s.getLogo().getWidth());
 		assertEquals(270, s.getLogo().getHeight());
+	}
+	
+	@Test
+	public void testAffiliateIsOptional() throws Exception {
+		JSONObject input = new JSONObject(BASIC_STATION_JSON);
+		input.remove("affiliate");
+		assertFalse(input.has("affiliate"));
+		new Station(input, null, mock(EpgClient.class));
 	}
 }
