@@ -16,10 +16,8 @@
 package org.schedulesdirect.api;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.Date;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
 import org.schedulesdirect.api.exception.SilentInvalidJsonObjectException;
@@ -47,8 +45,8 @@ public class Message {
 		try {
 			date = Config.get().getDateTimeFormat().parse(src.getString("date"));
 			id = src.getString("msgID");
-		} catch(JSONException | ParseException e) {
-			throw new SilentInvalidJsonObjectException(e);
+		} catch(Throwable t) {
+			throw new SilentInvalidJsonObjectException(t);
 		}
 		content = src.optString("message");
 		this.clnt = clnt;

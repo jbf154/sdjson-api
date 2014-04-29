@@ -15,7 +15,6 @@
  */
 package org.schedulesdirect.api;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,7 +23,6 @@ import java.util.Date;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
 
@@ -343,8 +341,8 @@ public class Airing {
 			} else
 				contentType = ContentType.NONE;
 			broadcastLanguage = src.optString("programLanguage", null);
-		} catch(JSONException | ParseException e) {
-			throw new InvalidJsonObjectException(String.format("Airing[%s]: %s", id, e.getMessage()), e, src.toString(3));
+		} catch(Throwable t) {
+			throw new InvalidJsonObjectException(String.format("Airing[%s]: %s", id, t.getMessage()), t, src.toString(3));
 		}
 	}
 

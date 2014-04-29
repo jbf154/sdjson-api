@@ -487,8 +487,8 @@ public class Program {
 				teams = new Team[0];
 				venue = null;
 			}
-		} catch (JSONException | ParseException e) {
-			throw new InvalidJsonObjectException(String.format("Program[%s]: %s", id, e.getMessage()), e, src.toString(3));
+		} catch (Throwable t) {
+			throw new InvalidJsonObjectException(String.format("Program[%s]: %s", id, t.getMessage()), t, src.toString(3));
 		}
 	}
 

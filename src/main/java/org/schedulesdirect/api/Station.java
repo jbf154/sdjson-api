@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
 import org.schedulesdirect.api.exception.SilentInvalidJsonObjectException;
@@ -206,8 +205,8 @@ public class Station {
 			atscMajorNumber = tuningDetails.optInt("atscMajor", 0);
 			atscMinorNumber = tuningDetails.optInt("atscMinor", 0);
 			language = src.optString("language");
-		} catch (JSONException e) {
-			throw new InvalidJsonObjectException(String.format("Station[%s]: %s", id, e.getMessage()), e, String.format("src:%n%s%n%ntuning:%s", src.toString(3), tuningDetails.toString(3)));
+		} catch (Throwable t) {
+			throw new InvalidJsonObjectException(String.format("Station[%s]: %s", id, t.getMessage()), t, String.format("src:%n%s%n%ntuning:%s", src.toString(3), tuningDetails.toString(3)));
 		}
 	}
 

@@ -15,7 +15,6 @@
  */
 package org.schedulesdirect.api;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,7 +24,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
 
@@ -89,8 +87,8 @@ public class UserStatus {
 			JSONObject clone = new JSONObject(src.toString());
 			clone.put("userId", this.userId);
 			jsonEncoding = clone.toString(3);
-		} catch(JSONException | ParseException e) {
-			throw new InvalidJsonObjectException(String.format("UserStatus[%s]: %s", this.userId, e.getMessage()), e, src.toString(3));
+		} catch(Throwable t) {
+			throw new InvalidJsonObjectException(String.format("UserStatus[%s]: %s", this.userId, t.getMessage()), t, src.toString(3));
 		}
 	}
 
