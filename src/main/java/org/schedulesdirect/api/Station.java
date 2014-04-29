@@ -187,7 +187,7 @@ public class Station {
 			id = src.getString("stationID");
 			callsign = src.getString("callsign");
 			name = src.getString("name");
-			affiliate = src.getString("affiliate");
+			affiliate = src.optString("affiliate");
 			JSONObject o = src.getJSONObject("broadcaster");
 			if(o != null) {
 				broadcasterState = o.optString("state");
