@@ -46,7 +46,7 @@ public class UserStatusTest extends SdjsonTestSuite {
 	
 	@Test
 	public void testIsExpired() throws Exception {
-		Date d = new Date();
+		Date d = new Date(System.currentTimeMillis() - 3600000L);
 		UserStatus us = build(d);
 		assertTrue(us.isExpired());
 		d = new Date(d.getTime() + 86400L * 1000L * 30L);
