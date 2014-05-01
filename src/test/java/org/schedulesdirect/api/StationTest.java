@@ -29,6 +29,18 @@ public class StationTest extends SdjsonTestSuite {
 	static private final String BASIC_STATION_JSON = "{\"logo\":{\"dimension\":\"w=360px|h=270px\",\"URL\":\"https://s3.amazonaws.com/schedulesdirect/sources/h3/NowShowing/10098/s10098_h3_aa.png\"},\"affiliate\":\"CBS Affiliate\",\"name\":\"WWNYDT (WWNY-DT)\",\"broadcaster\":{\"postalcode\":\"13601\",\"state\":\"NY\",\"country\":\"United States\",\"city\":\"Watertown\"},\"stationID\":\"35045\",\"language\":\"English\",\"callsign\":\"WWNYDT\"}";
 	
 	@Test
+	public void testBroadcasterIsOptional() throws Exception {
+		JSONObject input = new JSONObject(BASIC_STATION_JSON);
+		input.remove("broadcaster");
+		assertFalse(input.has("broadcaster"));
+		Station s = new Station(input, null, mock(EpgClient.class));
+		assertEquals("", s.getBroadcasterCity());
+		assertEquals("", s.getBroadcasterCountry());
+		assertEquals("", s.getBroadcasterState());
+		assertEquals("", s.getBroadcasterZip());
+	}
+	
+	@Test
 	public void validateNoPhysicalChannel() throws Exception {
 		Station s = new Station(new JSONObject(BASIC_STATION_JSON), null, mock(EpgClient.class));
 		s.setUhfVhfNumber(0);

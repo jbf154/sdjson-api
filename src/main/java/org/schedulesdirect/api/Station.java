@@ -188,13 +188,19 @@ public class Station {
 			callsign = src.getString("callsign");
 			name = src.getString("name");
 			affiliate = src.optString("affiliate");
-			JSONObject o = src.getJSONObject("broadcaster");
+			JSONObject o = src.optJSONObject("broadcaster");
 			if(o != null) {
 				broadcasterState = o.optString("state");
 				broadcasterCity = o.optString("city");
 				broadcasterZip = o.optString("postalcode");
 				broadcasterCountry = o.optString("country");
+			} else {
+				broadcasterState = "";
+				broadcasterCity = "";
+				broadcasterZip = "";
+				broadcasterCountry = "";
 			}
+			
 			if(src.has("logo"))
 				logo = new Logo(src.getJSONObject("logo"));
 			else
