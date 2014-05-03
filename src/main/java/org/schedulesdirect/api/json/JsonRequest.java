@@ -36,6 +36,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.schedulesdirect.api.Config;
 import org.schedulesdirect.api.EpgClient;
+import org.schedulesdirect.api.exception.InvalidHttpResponse;
 import org.schedulesdirect.api.utils.HttpUtils;
 
 /**
@@ -194,8 +195,11 @@ public final class JsonRequest {
 			StatusLine status = resp.getStatusLine();
 			audit.append(String.format("<<<resp_status: %s%n", status));
 			audit.append(String.format("<<<resp_headers:%n%s", HttpUtils.prettyPrintHeaders(resp.getAllHeaders(), "\t")));
-			if(status.getStatusCode() != 200)
-				LOG.debug(String.format("%s returned error! [rc=%d]", req, status.getStatusCode()));
+			if(status.getStatusCode() != 200) {
+				if(LOG.isDebugEnabled())
+					LOG.debug(String.format("%s returned error! [rc=%d]", req, status.getStatusCode()));
+				throw new InvalidHttpResponse("HTTP request did not return rc=200!", status.getStatusCode(), status.getReasonPhrase());
+			}
 			return resp.getEntity().getContent();
 		} catch(IOException e) { 
 			audit.append(String.format("*** REQUEST FAILED! ***%n%s", e.getMessage()));
