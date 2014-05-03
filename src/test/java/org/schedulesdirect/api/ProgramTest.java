@@ -271,4 +271,14 @@ public class ProgramTest extends SdjsonTestSuite {
 		Program p = new Program(new JSONObject(getRandomSampleProgram()));
 		p.setStarRating("****+");
 	}
+	
+	@Test
+	public void dontAllowDuplicateGenres() throws Exception {
+		JSONObject src = new JSONObject(getRandomSampleProgram());
+		src.put("showType", "Special");
+		src.put("genres", new JSONArray(new String[] {"Special"}));
+		Program p = new Program(src);
+		assertEquals(1, p.getGenres().length);
+		assertEquals("Special", p.getGenres()[0]);
+	}
 }

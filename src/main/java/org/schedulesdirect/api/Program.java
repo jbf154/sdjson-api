@@ -450,7 +450,7 @@ public class Program {
 					LOG.warn(String.format("Unknown SourceType encountered! [%s]", srcType));
 				sourceType = SourceType.UNKNOWN;
 			}
-			List<String> genreVals = new ArrayList<>();
+			Set<String> genreVals = new HashSet<>();
 			String showTypeVal = src.optString("showType");
 			if(showTypeVal != null && !"Series".equals(showTypeVal)) {
 				if(MOVIE_REGEX.matcher(showTypeVal).matches())
