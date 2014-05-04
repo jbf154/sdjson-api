@@ -170,6 +170,10 @@ public class Program {
 
 		private Role role;
 		private String name;
+		private int billingOrder;
+		private String personId;
+		private String nameId;
+		private String characterName;
 	
 		private Credit(JSONObject src) throws JSONException {
 			Role r = null;
@@ -196,6 +200,10 @@ public class Program {
 			}
 			role = r;
 			this.name = name;
+			billingOrder = Integer.parseInt(src.optString("billingOrder", "0"));
+			personId = src.optString("personId", null);
+			nameId = src.optString("nameId", null);
+			characterName = src.optString("characterName", null);
 		}
 
 		/**
@@ -215,13 +223,38 @@ public class Program {
 		 */
 		@Override
 		public String toString() {
-			StringBuilder builder = new StringBuilder();
-			builder.append("Credit [role=");
-			builder.append(role);
-			builder.append(", name=");
-			builder.append(name);
-			builder.append("]");
-			return builder.toString();
+			return "Credit [personId=" + personId + ", nameId=" + nameId
+					+ ", billingOrder=" + billingOrder + ", name=" + name
+					+ ", role=" + role + ", characterName=" + characterName
+					+ "]";
+		}
+
+		/**
+		 * @return the billingOrder
+		 */
+		public int getBillingOrder() {
+			return billingOrder;
+		}
+
+		/**
+		 * @return the personId
+		 */
+		public String getPersonId() {
+			return personId;
+		}
+
+		/**
+		 * @return the nameId
+		 */
+		public String getNameId() {
+			return nameId;
+		}
+
+		/**
+		 * @return the characterName
+		 */
+		public String getCharacterName() {
+			return characterName;
 		}
 	}
 	
