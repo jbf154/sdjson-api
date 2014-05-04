@@ -15,6 +15,7 @@
  */
 package org.schedulesdirect.api;
 
+import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -352,14 +353,16 @@ public class Program {
 	private String seriesDescription;
 	private String venue;
 	private Team[] teams;
+	private URL[] images;
 	
 	/**
 	 * Consutrctor
 	 * @param src The JSON object from which this instance is being constructed; cannot be null
+	 * @param epgClnt The EpgClient instance to associate with this Program instance
 	 * @throws InvalidJsonObjectException Thrown if the given src is not in the expected format
 	 * @throws IllegalArgumentException Thrown if src is null
 	 */
-	Program(JSONObject src) throws InvalidJsonObjectException {
+	Program(JSONObject src, EpgClient clnt) throws InvalidJsonObjectException {
 		if(src == null)
 			throw new IllegalArgumentException("src cannot be null!");
 		try {
@@ -519,6 +522,19 @@ public class Program {
 			} else {
 				teams = new Team[0];
 				venue = null;
+			}
+			JSONArray images = src.optJSONArray("images");
+			if(images != null) {
+				Collection<URL> urls = new ArrayList<>();
+				for(int i = 0; i < images.length(); ++i) {
+					JSONObject o = images.getJSONObject(i);
+					String url = o.getString("uri");
+					if(!url.matches("^https?:\\/\\/.*"))
+						urls.add(new URL(String.format("%s/%s/%s", clnt.getBaseUrl(), EpgClient.API_VERSION, url)));
+					else
+						urls.add(new URL(url));
+				}
+				this.images = urls.toArray(new URL[0]);
 			}
 		} catch (Throwable t) {
 			throw new InvalidJsonObjectException(String.format("Program[%s]: %s", id, t.getMessage()), t, src.toString(3));
@@ -1140,5 +1156,28 @@ public class Program {
 	 */
 	public void setTeams(Team[] teams) {
 		this.teams = teams;
+	}
+
+	/**
+	 * <p>
+	 *   The URLs returned by this method must be inspected by the caller and acted upon differently
+	 *   based on whether or not the URL starts with <code>EpgClient.getBaseUrl()</code>.
+	 *   If the URL does start with the value of <code>getBaseUrl()</code> then in order to access
+	 *   the image, you <b>must</b> route the request thru an instance of <code>NetworkEpgClient</code>
+	 *   in order to ensure the request is properly authenticated.  URLs that don't point to the JSON
+	 *   service do not need to be authenticated and can just be accessed directly with your favourite
+	 *   URL reader (including <code>URL.openStream()</code>).
+	 * </p>
+	 * @return URLs representing the various fanart images available for this program
+	 */
+	public URL[] getImages() {
+		return images;
+	}
+
+	/**
+	 * @param images the images to set
+	 */
+	public void setImages(URL[] images) {
+		this.images = images;
 	}
 }

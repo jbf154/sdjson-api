@@ -15,6 +15,10 @@
  */
 package org.schedulesdirect.api.json;
 
+import java.net.URL;
+
+import org.schedulesdirect.api.json.JsonRequest.Action;
+
 /**
  * Constructs requests that function against the given web serivce URL
  * @author Derek Battams &lt;derek@battams.ca&gt;
@@ -32,5 +36,11 @@ public class JsonRequestFactory implements IJsonRequestFactory {
 	@Override
 	public JsonRequest get(JsonRequest.Action action, String resource) {
 		return new JsonRequest(action, resource);
+	}
+
+	@Override
+	public JsonRequest get(Action action, URL url) {
+		String[] data = url.getPath().substring(1).split("\\/", 2);
+		return new JsonRequest(action, data[1]);
 	}
 }

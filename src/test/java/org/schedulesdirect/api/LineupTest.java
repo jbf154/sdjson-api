@@ -107,7 +107,7 @@ public class LineupTest extends SdjsonTestSuite {
 		}			
 	}
 
-	private String getRandomSampleProgram() {
+	private String getRandomSampleLineup() {
 		String s = null;
 		while(s == null) s = SAMPLE_DATA.get(RNG.nextInt(SAMPLE_DATA.size()));
 		return s;

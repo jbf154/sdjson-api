@@ -39,6 +39,7 @@ import org.schedulesdirect.test.TestConfig;
 import org.schedulesdirect.test.utils.Logging;
 import org.schedulesdirect.test.utils.SampleData;
 import org.schedulesdirect.test.utils.SampleData.SampleType;
+import static org.mockito.Mockito.*;
 
 public class ProgramTest extends SdjsonTestSuite {
 	static private final Log LOG = Logging.getLogger(ProgramTest.class);
@@ -48,9 +49,11 @@ public class ProgramTest extends SdjsonTestSuite {
 	static public final List<String> SAMPLE_DATA = new ArrayList<String>();
 	
 	static private final Random RNG = new Random();
+	static private final EpgClient CLNT = mock(EpgClient.class);
 	
 	@BeforeClass
 	static public void init() throws Exception {
+		when(CLNT.getBaseUrl()).thenReturn("http://127.0.0.1");
 		initJsonData();
 		loadAllSamples();
 	}
@@ -84,7 +87,7 @@ public class ProgramTest extends SdjsonTestSuite {
 		for(int i = 0; i < SAMPLE_DATA.size(); ++i) {
 			JSONObject input = new JSONObject(SAMPLE_DATA.get(i));
 			try {
-				new Program(input);
+				new Program(input, CLNT);
 			} catch(InvalidJsonObjectException e) {
 				sb.append(String.format("\t(line %d) %s%n", i + 1, e.getMessage()));
 				SAMPLE_DATA.set(i, null);
@@ -115,14 +118,14 @@ public class ProgramTest extends SdjsonTestSuite {
 	
 	@Test(expected=IllegalArgumentException.class)
 	public void validateNullCtor() throws Exception {
-		new Program(null);
+		new Program(null, CLNT);
 	}
 	
 	@Test(expected=InvalidJsonObjectException.class)
 	public void validateNoTitlesObjInCtor() throws Exception {
 		JSONObject input = new JSONObject(getRandomSampleProgram());
 		input.remove(OBJ_TITLES);
-		new Program(input);
+		new Program(input, CLNT);
 	}
 
 	@Test(expected=InvalidJsonObjectException.class)
@@ -131,14 +134,14 @@ public class ProgramTest extends SdjsonTestSuite {
 		JSONObject o = input.getJSONObject(OBJ_TITLES);
 		o.remove(TITLES_PROP_MAIN);
 		input.put(OBJ_TITLES, o);
-		new Program(input);
+		new Program(input, CLNT);
 	}
 
 	@Test(expected=InvalidJsonObjectException.class)
 	public void validateNoProgIdInCtor() throws Exception {
 		JSONObject input = new JSONObject(getRandomSampleProgram());
 		input.remove("programID");
-		new Program(input);
+		new Program(input, CLNT);
 	}
 
 	@Test
@@ -148,7 +151,7 @@ public class ProgramTest extends SdjsonTestSuite {
 		credits.put(new JSONObject("{\"role\":\"bad role\",\"name\": \"John Doe\"}"));
 		input.put("crew", credits);
 		input.remove("cast");
-		Program p = new Program(input);
+		Program p = new Program(input, CLNT);
 		Credit[] array = p.getCredits();
 		assertEquals(1, array.length);
 		Credit c = array[0];
@@ -163,7 +166,7 @@ public class ProgramTest extends SdjsonTestSuite {
 		credits.put(new JSONObject("{\"role\":\"Guest Star\",\"name\": \"John Doe\"}"));
 		input.put("cast", credits);
 		input.remove("crew");
-		Program p = new Program(input);
+		Program p = new Program(input, CLNT);
 		Credit[] array = p.getCredits();
 		assertEquals(1, array.length);
 		Credit c = array[0];
@@ -178,97 +181,97 @@ public class ProgramTest extends SdjsonTestSuite {
 		credits.put("John Doe");
 		input.put("crew", credits);
 		input.remove("cast");
-		new Program(input);
+		new Program(input, CLNT);
 	}
 
 	@Test(expected=InvalidJsonObjectException.class)
 	public void validateInvalidGameTime() throws Exception {
 		JSONObject input = new JSONObject(getRandomSampleProgram());
 		input.put("gameDatetime", "invalid");
-		new Program(input);
+		new Program(input, CLNT);
 	}
 
 	@Test(expected=InvalidJsonObjectException.class)
 	public void validateInvalidOriginalAirDate() throws Exception {
 		JSONObject input = new JSONObject(getRandomSampleProgram());
 		input.put("originalAirDate", "invalid");
-		new Program(input);
+		new Program(input, CLNT);
 	}
 	
 	@Test
 	public void calcZeroStarRatingForNull() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()));
+		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
 		p.setStarRating(null);
 		assertEquals(0.0F, p.getStarRatingValue(), TestConfig.DBL_DELTA);
 	}
 
 	@Test
 	public void calcZeroStarRatingForEmptyStr() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()));
+		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
 		p.setStarRating("");
 		assertEquals(0.0F, p.getStarRatingValue(), TestConfig.DBL_DELTA);
 	}
 
 	@Test
 	public void calcWholeStarRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()));
+		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
 		p.setStarRating("***");
 		assertEquals(3.0F, p.getStarRatingValue(), TestConfig.DBL_DELTA);
 	}
 
 	@Test
 	public void calcHalfStarRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()));
+		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
 		p.setStarRating("+");
 		assertEquals(0.5F, p.getStarRatingValue(), TestConfig.DBL_DELTA);
 	}
 
 	@Test
 	public void calcWholeAndHalfStarRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()));
+		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
 		p.setStarRating("***+");
 		assertEquals(3.5F, p.getStarRatingValue(), TestConfig.DBL_DELTA);
 	}
 
 	@Test(expected=ParseException.class)
 	public void calcInvalidCharRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()));
+		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
 		p.setStarRating("%");
 	}
 
 	@Test(expected=ParseException.class)
 	public void calcValidAndInvalidEndCharRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()));
+		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
 		p.setStarRating("*+b");
 	}
 
 	@Test(expected=ParseException.class)
 	public void calcValidAndInvaidFirstCharRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()));
+		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
 		p.setStarRating("$**+");
 	}
 
 	@Test(expected=ParseException.class)
 	public void calcValidAndInvalidMiddleCharRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()));
+		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
 		p.setStarRating("**42+");
 	}
 	
 	@Test(expected=ParseException.class)
 	public void calcHalfStarInMiddleRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()));
+		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
 		p.setStarRating("**+*");
 	}
 	
 	@Test(expected=ParseException.class)
 	public void calcMultipleHalfsRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()));
+		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
 		p.setStarRating("**++");
 	}
 	
 	@Test(expected=ParseException.class)
 	public void calcTooBigRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()));
+		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
 		p.setStarRating("****+");
 	}
 	
@@ -277,7 +280,7 @@ public class ProgramTest extends SdjsonTestSuite {
 		JSONObject src = new JSONObject(getRandomSampleProgram());
 		src.put("showType", "Special");
 		src.put("genres", new JSONArray(new String[] {"Special"}));
-		Program p = new Program(src);
+		Program p = new Program(src, CLNT);
 		assertEquals(1, p.getGenres().length);
 		assertEquals("Special", p.getGenres()[0]);
 	}

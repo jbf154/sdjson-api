@@ -46,13 +46,16 @@ public abstract class EpgClient {
 	}
 	
 	private String userAgent;
+	private String baseUrl;
 	
 	/**
 	 * Constructor
 	 * @param userAgent The user agent to pass along to all SD HTTP requests
+	 * @param baseUri The base URI to use when constructing URIs/URLs based on relative data in the raw JSON
 	 */
-	public EpgClient(final String userAgent) {
+	public EpgClient(final String userAgent, final String baseUrl) {
 		this.userAgent = userAgent;
+		this.baseUrl = baseUrl != null ? baseUrl : Config.DEFAULT_BASE_URL;
 	}
 	
 	/**
@@ -251,4 +254,18 @@ public abstract class EpgClient {
 	 * @throws UnsupportedOperationException If the client type doesn't support the operation
 	 */
 	abstract public int unregisterLineup(final Lineup l) throws IOException;
+
+	/**
+	 * @return the baseUrl
+	 */
+	public String getBaseUrl() {
+		return baseUrl;
+	}
+
+	/**
+	 * @param baseUri the baseUrl to set
+	 */
+	public void setBaseUri(String baseUrl) {
+		this.baseUrl = baseUrl;
+	}
 }

@@ -15,6 +15,8 @@
  */
 package org.schedulesdirect.api.json;
 
+import java.net.URL;
+
 /**
  * @author Derek Battams &lt;derek@battams.ca&gt;
  *
@@ -38,4 +40,12 @@ public interface IJsonRequestFactory {
 	 * @return The partial JsonRequest object; use this object as the basis for constructing a full one
 	 */
 	public JsonRequest get(JsonRequest.Action action, String resource);
+	
+	/**
+	 * Construct a JSON request from a complete URL; the request is partial and cannot be immediately executed
+	 * @param action The action to execute
+	 * @param url The URL to build the request from
+	 * @return The partial JsonRequest; suitable for constructing a full, executable request
+	 */
+	public JsonRequest get(JsonRequest.Action action, URL url);
 }

@@ -119,19 +119,21 @@ public class ZipEpgClient extends EpgClient {
 	/**
 	 * Constructor
 	 * @param zip The zip path to be used as the data source for this client implementation
+	 * @param baseUrl The base URL used to construct absolute URLs from relative URL data in the raw JSON
 	 * @throws IOException Thrown on any IO error reading the zip file
 	 */
-	public ZipEpgClient(final Path zip) throws IOException {
-		this(zip.toFile());
+	public ZipEpgClient(final Path zip, final String baseUrl) throws IOException {
+		this(zip.toFile(), baseUrl);
 	}
 	
 	/**
 	 * Constructor
 	 * @param zip The zip file to be used as the data source for this client implementation
+	 * @param baseUrl The base URL used to construct absolute URLs from relative URL data in the raw JSON
 	 * @throws IOException Thrown on any IO error reading the zip file
 	 */
-	public ZipEpgClient(final File zip) throws IOException {
-		super(null);
+	public ZipEpgClient(final File zip, final String baseUrl) throws IOException {
+		super(null, baseUrl);
 		src = zip;
 		progCache = new HashMap<String, Program>();
 		URI fsUri;
@@ -185,7 +187,25 @@ public class ZipEpgClient extends EpgClient {
 		}
 		i.incrementAndGet();
 		closed = false;
-		detailsFetched = false;
+		detailsFetched = false;		
+	}
+	
+	/**
+	 * Constructor
+	 * @param zip The zip path to be used as the data source for this client implementation
+	 * @throws IOException Thrown on any IO error reading the zip file
+	 */
+	public ZipEpgClient(final Path zip) throws IOException {
+		this(zip.toFile());
+	}
+	
+	/**
+	 * Constructor
+	 * @param zip The zip file to be used as the data source for this client implementation
+	 * @throws IOException Thrown on any IO error reading the zip file
+	 */
+	public ZipEpgClient(final File zip) throws IOException {
+		this(zip, null);
 	}
 
 	@Override
@@ -275,7 +295,7 @@ public class ZipEpgClient extends EpgClient {
 						}
 						String cachedMd5 = obj.optString("md5", "");
 						if(cachedMd5 != null && !"".equals(cachedMd5)) {
-							p = new Program(obj);
+							p = new Program(obj, this);
 							progCache.put(progId, p);
 						}
 					}
