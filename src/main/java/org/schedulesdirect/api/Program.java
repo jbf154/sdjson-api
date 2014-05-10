@@ -25,6 +25,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -486,7 +487,7 @@ public class Program {
 					LOG.warn(String.format("Unknown SourceType encountered! [%s]", srcType));
 				sourceType = SourceType.UNKNOWN;
 			}
-			Set<String> genreVals = new HashSet<>();
+			Set<String> genreVals = new LinkedHashSet<>();
 			String showTypeVal = src.optString("showType");
 			if(showTypeVal != null && !"Series".equals(showTypeVal)) {
 				if(MOVIE_REGEX.matcher(showTypeVal).matches())
