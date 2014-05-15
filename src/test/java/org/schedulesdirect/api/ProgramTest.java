@@ -15,10 +15,12 @@
  */
 package org.schedulesdirect.api;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -32,14 +34,14 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.schedulesdirect.api.Program.Credit;
+import org.schedulesdirect.api.Program.FloatQualityRating;
+import org.schedulesdirect.api.Program.QualityRating;
 import org.schedulesdirect.api.Program.Role;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
 import org.schedulesdirect.test.SdjsonTestSuite;
-import org.schedulesdirect.test.TestConfig;
 import org.schedulesdirect.test.utils.Logging;
 import org.schedulesdirect.test.utils.SampleData;
 import org.schedulesdirect.test.utils.SampleData.SampleType;
-import static org.mockito.Mockito.*;
 
 public class ProgramTest extends SdjsonTestSuite {
 	static private final Log LOG = Logging.getLogger(ProgramTest.class);
@@ -199,82 +201,18 @@ public class ProgramTest extends SdjsonTestSuite {
 	}
 	
 	@Test
-	public void calcZeroStarRatingForNull() throws Exception {
+	public void testFloatQualityRating() throws Exception {
+		JSONObject rating = new JSONObject();
+		rating.put("rating", "2.5");
+		rating.put("minRating", "1");
+		rating.put("maxRating", "4");
+		rating.put("increment", ".5");
+		rating.put("ratingsBody", "TMS");
 		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
-		p.setStarRating(null);
-		assertEquals(0.0F, p.getStarRatingValue(), TestConfig.DBL_DELTA);
+		p.setQualityRatings(new QualityRating[] { new FloatQualityRating(rating, "stars") });
+		assertEquals("2.5/4.0 stars", p.getQualityRatings()[0].toString());
 	}
-
-	@Test
-	public void calcZeroStarRatingForEmptyStr() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
-		p.setStarRating("");
-		assertEquals(0.0F, p.getStarRatingValue(), TestConfig.DBL_DELTA);
-	}
-
-	@Test
-	public void calcWholeStarRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
-		p.setStarRating("***");
-		assertEquals(3.0F, p.getStarRatingValue(), TestConfig.DBL_DELTA);
-	}
-
-	@Test
-	public void calcHalfStarRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
-		p.setStarRating("+");
-		assertEquals(0.5F, p.getStarRatingValue(), TestConfig.DBL_DELTA);
-	}
-
-	@Test
-	public void calcWholeAndHalfStarRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
-		p.setStarRating("***+");
-		assertEquals(3.5F, p.getStarRatingValue(), TestConfig.DBL_DELTA);
-	}
-
-	@Test(expected=ParseException.class)
-	public void calcInvalidCharRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
-		p.setStarRating("%");
-	}
-
-	@Test(expected=ParseException.class)
-	public void calcValidAndInvalidEndCharRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
-		p.setStarRating("*+b");
-	}
-
-	@Test(expected=ParseException.class)
-	public void calcValidAndInvaidFirstCharRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
-		p.setStarRating("$**+");
-	}
-
-	@Test(expected=ParseException.class)
-	public void calcValidAndInvalidMiddleCharRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
-		p.setStarRating("**42+");
-	}
-	
-	@Test(expected=ParseException.class)
-	public void calcHalfStarInMiddleRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
-		p.setStarRating("**+*");
-	}
-	
-	@Test(expected=ParseException.class)
-	public void calcMultipleHalfsRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
-		p.setStarRating("**++");
-	}
-	
-	@Test(expected=ParseException.class)
-	public void calcTooBigRating() throws Exception {
-		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
-		p.setStarRating("****+");
-	}
-	
+		
 	@Test
 	public void dontAllowDuplicateGenres() throws Exception {
 		JSONObject src = new JSONObject(getRandomSampleProgram());

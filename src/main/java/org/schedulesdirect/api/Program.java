@@ -16,7 +16,6 @@
 package org.schedulesdirect.api;
 
 import java.net.URL;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +37,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
+import org.schedulesdirect.api.exception.SilentInvalidJsonObjectException;
 
 /**
  * A Program represents the details of events and shows that are broadcast
@@ -296,6 +296,138 @@ public class Program {
 			return "Team [name=" + name + ", isHome=" + isHome + "]";
 		}
 	}
+	
+	/**
+	 * Represents a movie quality rating (i.e. star rating, "3 out of 4 stars")
+	 * @author Derek Battams &lt;derek@battams.ca&gt;
+	 *
+	 */
+	static public abstract class QualityRating {
+		private String source;
+		private String units;
+		
+		private QualityRating(String source, String units) {
+			this.source = source;
+			this.units = units;
+		}
+
+		/**
+		 * @return the ratings body (i.e. critic, TMS, etc.); null if not known
+		 */
+		public String getSource() {
+			return source;
+		}
+		
+		/**
+		 * @return the unit of measure this rating is in (i.e. "stars", etc.)
+		 */
+		public String getUnits() {
+			return units;
+		}
+
+		abstract public Object getRating();
+		abstract public Object getMinRating();
+		abstract public Object getMaxRating();
+		abstract public Object getIncrement();
+	}
+	
+	static public class StringQualityRating extends QualityRating {
+
+		private String rating;
+		private String minRating;
+		private String maxRating;
+		private String increment;
+		
+		protected StringQualityRating(JSONObject src, String units) throws InvalidJsonObjectException {
+			super(src.optString("ratingsBody", null), units);
+			try {
+				rating = src.getString("rating");
+				minRating = src.optString("minRating", null);
+				maxRating = src.optString("maxRating", null);
+				increment = src.optString("increment", null);
+			} catch(JSONException e) {
+				throw new SilentInvalidJsonObjectException(e);
+			}
+		}
+
+		/**
+		 * @return the rating
+		 */
+		public String getRating() {
+			return rating;
+		}
+
+		/**
+		 * @return the minRating
+		 */
+		public String getMinRating() {
+			return minRating;
+		}
+
+		/**
+		 * @return the maxRating
+		 */
+		public String getMaxRating() {
+			return maxRating;
+		}
+
+		/**
+		 * @return the increment
+		 */
+		public String getIncrement() {
+			return increment;
+		}
+		
+		@Override
+		public String toString() {
+			return String.format("%s %s", rating, getUnits());
+		}		
+	}
+	
+	static public class FloatQualityRating extends QualityRating {
+		
+		private float rating;
+		private float minRating;
+		private float maxRating;
+		private float increment;
+		
+		protected FloatQualityRating(JSONObject src, String units) {
+			super(src.optString("ratingsBody", null), units);
+			rating = Float.parseFloat(src.getString("rating"));
+			minRating = Float.parseFloat(src.optString("minRating", Float.toString(Float.MIN_VALUE)));
+			maxRating = Float.parseFloat(src.optString("maxRating", Float.toString(Float.MIN_VALUE)));
+			increment = Float.parseFloat(src.optString("increment", Float.toString(Float.MIN_VALUE)));
+		}
+
+		@Override
+		public Float getRating() {
+			return rating;
+		}
+
+		@Override
+		public Float getMinRating() {
+			return minRating;
+		}
+
+		@Override
+		public Float getMaxRating() {
+			return maxRating;
+		}
+
+		@Override
+		public Float getIncrement() {
+			return increment;
+		}
+		
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder(String.format("%.1f", rating));
+			if(maxRating > Float.MIN_VALUE)
+				sb.append(String.format("/%.1f", maxRating));
+			sb.append(String.format(" %s", getUnits()));
+			return sb.toString();
+		}
+	}
 
 	static private String parseDesc(JSONArray src) {
 		return src != null ? src.getJSONObject(findEnDescIndex(src)).getString("description") : "";
@@ -344,8 +476,7 @@ public class Program {
 	private String countryOfOrigin;
 	private String studio;
 	private int runTime;
-	private String starRating;
-	private float starRatingValue;
+	private QualityRating[] qualityRatings;
 	private String episodeNumber;
 	private String[] shortTitles;
 	private int year;
@@ -393,11 +524,18 @@ public class Program {
 			shortTitles[2] = titles.optString("title20");
 			shortTitles[3] = titles.optString("title10");
 			episodeNumber = src.optString("syndicatedEpisodeNumber");
-			starRating = movieInfo != null && movieInfo.has("starRating") ? movieInfo.getString("starRating") : null;
-			if(starRating == null || starRating.length() == 0)
-				starRatingValue = 0.0F;
-			else
-				starRatingValue = calcStarValue();
+			Collection<QualityRating> ratingObjs = new ArrayList<>();
+			if(movieInfo != null && movieInfo.has("qualityRating")) {
+				JSONArray ratings = movieInfo.getJSONArray("qualityRating");
+				for(int i = 0; i < ratings.length(); ++i) {
+					JSONObject r = ratings.getJSONObject(i);
+					if("TMS".equals(r.optString("ratingsBody")))
+						ratingObjs.add(new FloatQualityRating(r, "stars"));
+					else
+						ratingObjs.add(new StringQualityRating(r, "rating"));
+				}
+			}
+			qualityRatings = ratingObjs.toArray(new QualityRating[0]);
 			runTime = movieInfo != null && movieInfo.has("runTime") ? movieInfo.getInt("runTime") : 0;
 			studio = movieInfo != null && movieInfo.has("origStudio") ? movieInfo.getString("origStudio") : null;
 			countryOfOrigin = movieInfo != null && movieInfo.has("origCountry") ? movieInfo.getString("origCountry") : null;
@@ -725,45 +863,6 @@ public class Program {
 	}
 
 	/**
-	 * @return The star rating of this program or null if not available; only available for Programs with MV* ids
-	 */
-	public String getStarRating() {
-		return starRating;
-	}
-	
-	/**
-	 * @return The star rating of this program, as a float; 0.0 if not available OR if the rating was indeed zero; when zero, check getStarRating() to see if it's null or not, null means there was no rating provided, empty string means zero rating (for movies)
-	 */
-	public float getStarRatingValue() {
-		return starRatingValue;
-	}
-	
-	/**
-	 * Given a star rating from upstream, convert it to a number
-	 * @return The value of the star rating received
-	 * @throws ParseException If an invalid character is encountered in the received string
-	 */
-	protected float calcStarValue() throws ParseException {
-		if(starRating == null || starRating.length() == 0) return 0.0F;
-		float val = 0.0F;
-		for(int i = 0; i < starRating.length(); ++i) {
-			char c = starRating.charAt(i);
-			switch(c) {
-				case '*': val += 1.0F; break;
-				case '+':
-					val += 0.5F;
-					if(i != starRating.length() - 1)
-						throw new ParseException(String.format("Invalid format: can only be one '+' character and it must be last! [%s]", starRating), i);
-					break;
-				default: throw new ParseException(String.format("Invalid character in star rating! [%s]", Character.toString(c)), i);
-			}
-		}
-		if(val > 4.0F)
-			throw new ParseException(String.format("Star rating too high: %f [%s]", val, starRating), 0);
-		return val;
-	}
-
-	/**
 	 * @return Returns the episode number of this program or null if unknown; values returned are next to useless as there is no standard format for this value
 	 */
 	public String getEpisodeNumber() {
@@ -843,10 +942,10 @@ public class Program {
 				+ studio
 				+ ", runTime="
 				+ runTime
-				+ ", starRating="
-				+ starRating
-				+ ", starRatingValue="
-				+ starRatingValue
+				+ ", qualityRatings="
+				+ (qualityRatings != null ? Arrays.asList(qualityRatings)
+						.subList(0, Math.min(qualityRatings.length, maxLen))
+						: null)
 				+ ", episodeNumber="
 				+ episodeNumber
 				+ ", shortTitles="
@@ -866,7 +965,10 @@ public class Program {
 				+ venue
 				+ ", teams="
 				+ (teams != null ? Arrays.asList(teams).subList(0,
-						Math.min(teams.length, maxLen)) : null) + "]";
+						Math.min(teams.length, maxLen)) : null)
+				+ ", images="
+				+ (images != null ? Arrays.asList(images).subList(0,
+						Math.min(images.length, maxLen)) : null) + "]";
 	}
 
 	/**
@@ -1038,15 +1140,6 @@ public class Program {
 	}
 
 	/**
-	 * @param starRating the starRating to set
-	 * @throws ParseException Thrown if the arugment is not a valid star rating string
-	 */
-	public void setStarRating(String starRating) throws ParseException {
-		this.starRating = starRating;
-		starRatingValue = calcStarValue();
-	}
-
-	/**
 	 * @param episodeNumber the episodeNumber to set
 	 */
 	public void setEpisodeNumber(String episodeNumber) {
@@ -1180,5 +1273,19 @@ public class Program {
 	 */
 	public void setImages(URL[] images) {
 		this.images = images;
+	}
+
+	/**
+	 * @return the qualityRatings
+	 */
+	public QualityRating[] getQualityRatings() {
+		return qualityRatings;
+	}
+
+	/**
+	 * @param qualityRatings the qualityRatings to set
+	 */
+	public void setQualityRatings(QualityRating[] qualityRatings) {
+		this.qualityRatings = qualityRatings;
 	}
 }
