@@ -22,7 +22,7 @@ import java.io.IOException;
  * @author Derek Battams &lt;derek@battams.ca&gt;
  *
  */
-public class InvalidHttpResponse extends IOException {
+public class InvalidHttpResponseException extends IOException {
 
 	private static final long serialVersionUID = 1L;
 	
@@ -35,7 +35,7 @@ public class InvalidHttpResponse extends IOException {
 	 * @param status The HTTP status code received
 	 * @param details Extra details (response txt; header txt, etc)
 	 */
-	public InvalidHttpResponse(String message, int status, String details) {
+	public InvalidHttpResponseException(String message, int status, String details) {
 		super(message);
 		this.status = status;
 		this.details = details;
@@ -47,7 +47,7 @@ public class InvalidHttpResponse extends IOException {
 	 * @param status The HTTP status code received
 	 * @param details Extra details (response txt; header txt, etc)
 	 */
-	public InvalidHttpResponse(Throwable cause, int status, String details) {
+	public InvalidHttpResponseException(Throwable cause, int status, String details) {
 		super(cause);
 		this.status = status;
 		this.details = details;
@@ -60,7 +60,7 @@ public class InvalidHttpResponse extends IOException {
 	 * @param status The HTTP status code received
 	 * @param details Extra details (response txt; header txt, etc)
 	 */
-	public InvalidHttpResponse(String message, Throwable cause, int status, String details) {
+	public InvalidHttpResponseException(String message, Throwable cause, int status, String details) {
 		super(message, cause);
 		this.status = status;
 		this.details = details;

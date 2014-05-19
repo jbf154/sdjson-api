@@ -36,7 +36,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
 import org.schedulesdirect.api.Config;
 import org.schedulesdirect.api.EpgClient;
-import org.schedulesdirect.api.exception.InvalidHttpResponse;
+import org.schedulesdirect.api.exception.InvalidHttpResponseException;
+import org.schedulesdirect.api.exception.JsonEncodingException;
 import org.schedulesdirect.api.utils.HttpUtils;
 
 /**
@@ -129,8 +130,15 @@ public final class JsonRequest {
 	 */
 	public String submitForJson(Object reqData) throws IOException {
 		String str = null;
-		try(InputStream ins = submitRaw(reqData)) {
+		boolean throwIt = false;
+		HttpResponse resp = submitRaw(reqData);
+		Header h = resp.getFirstHeader("Content-Type");
+		if(h == null || !h.getValue().toLowerCase().contains("application/json"))
+			throwIt = true;
+		try(InputStream ins = resp.getEntity().getContent()) {
 			str = IOUtils.toString(ins, "UTF-8");
+			if(throwIt)
+				throw new JsonEncodingException("Request did not return expected content type!", str);
 			return str;
 		} finally {
 			Config conf = Config.get();
@@ -152,8 +160,24 @@ public final class JsonRequest {
 	 * @throws IllegalStateException Thrown if called on a partially constructed object (the 2 arg ctor)
 	 */
 	public InputStream submitForInputStream(Object reqData) throws IOException {
+		return submitForInputStream(reqData, true);
+	}
+	
+	/**
+	 * Submit this request; returns the raw input stream of the content; caller responsible for closing stream when done.
+	 * @param reqData The supporting data for the request; this is dependent on the action and obj target specified
+	 * @param failOnStatusError If true and the status code of the HTTP request > 399 then throw an exception; if false just return the entity stream regardless
+	 * @return The InputStream of data received in response to the request
+	 * @throws IOException Thrown on any IO error encountered
+	 * @throws IllegalStateException Thrown if called on a partially constructed object (the 2 arg ctor)
+	 */
+	public InputStream submitForInputStream(Object reqData, boolean failOnStatusError) throws IOException {
 		try {
-			InputStream ins = submitRaw(reqData);
+			HttpResponse resp = submitRaw(reqData);
+			int status = resp.getStatusLine().getStatusCode();
+			if(failOnStatusError && resp.getStatusLine().getStatusCode() >= 400)
+				throw new InvalidHttpResponseException(String.format("HTTP response returned an error status! [%d]", status), status, resp.getStatusLine().getReasonPhrase());
+			InputStream ins = resp.getEntity().getContent();
 			if(Config.get().captureHttpContent()) {
 				Path f = HttpUtils.captureContentToDisk(ins);
 				ins.close();
@@ -171,7 +195,7 @@ public final class JsonRequest {
 		}
 	}
 	
-	private InputStream submitRaw(Object reqData) throws IOException {
+	private HttpResponse submitRaw(Object reqData) throws IOException {
 		if(!valid)
 			throw new IllegalStateException("Cannot submit a partially constructed request!");
 		try {
@@ -195,12 +219,9 @@ public final class JsonRequest {
 			StatusLine status = resp.getStatusLine();
 			audit.append(String.format("<<<resp_status: %s%n", status));
 			audit.append(String.format("<<<resp_headers:%n%s", HttpUtils.prettyPrintHeaders(resp.getAllHeaders(), "\t")));
-			if(status.getStatusCode() != 200) {
-				if(LOG.isDebugEnabled())
-					LOG.debug(String.format("%s returned error! [rc=%d]", req, status.getStatusCode()));
-				throw new InvalidHttpResponse("HTTP request did not return rc=200!", status.getStatusCode(), status.getReasonPhrase());
-			}
-			return resp.getEntity().getContent();
+			if(LOG.isDebugEnabled() && status.getStatusCode() >= 400)
+				LOG.debug(String.format("%s returned error! [rc=%d]", req, status.getStatusCode()));
+			return resp;
 		} catch(IOException e) { 
 			audit.append(String.format("*** REQUEST FAILED! ***%n%s", e.getMessage()));
 			throw e;
