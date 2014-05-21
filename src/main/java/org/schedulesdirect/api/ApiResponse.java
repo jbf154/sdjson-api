@@ -33,6 +33,8 @@ public final class ApiResponse {
 	
 	static public final int NO_LINEUPS = 4102;
 	
+	static public final int INVALID_PROGID = 6000;
+	
 	static public final int NOT_PROVIDED = -1;
 
 	private ApiResponse() {}

@@ -447,6 +447,12 @@ public class Program {
 		return retVal;
 	}
 	
+	static public String convertToSeriesId(String id) {
+		if(id == null || !id.startsWith("EP"))
+			throw new IllegalArgumentException("Invalid id!");
+		return "SH" + id.substring(2, id.length() - 4) + "0000";
+	}
+	
 	static public final Pattern MOVIE_REGEX = Pattern.compile("Feature Film|.*Movie");
 	
 	static private final Set<String> WARNED_SRC_TYPES = new HashSet<>();
@@ -486,6 +492,7 @@ public class Program {
 	private String venue;
 	private Team[] teams;
 	private URL[] images;
+	private Program seriesInfo;
 	
 	/**
 	 * Consutrctor
@@ -675,11 +682,12 @@ public class Program {
 				}
 				this.images = urls.toArray(new URL[0]);
 			}
+			seriesInfo = id.startsWith("EP") ? clnt.fetchProgram(convertToSeriesId(id)) : null;
 		} catch (Throwable t) {
 			throw new InvalidJsonObjectException(String.format("Program[%s]: %s", id, t.getMessage()), t, src.toString(3));
 		}
 	}
-
+	
 	/**
 	 * @return A list of maps where each map in the list contains metadata from a given external data source (such as thetvdb.com); never null, possibly empty if no metadata is available for this program; keys of map depend on datasource value, see wiki for details of what's available for each type of metadata map
 	 */
@@ -968,7 +976,8 @@ public class Program {
 						Math.min(teams.length, maxLen)) : null)
 				+ ", images="
 				+ (images != null ? Arrays.asList(images).subList(0,
-						Math.min(images.length, maxLen)) : null) + "]";
+						Math.min(images.length, maxLen)) : null)
+				+ ", seriesInfo=" + seriesInfo + "]";
 	}
 
 	/**
@@ -1287,5 +1296,19 @@ public class Program {
 	 */
 	public void setQualityRatings(QualityRating[] qualityRatings) {
 		this.qualityRatings = qualityRatings;
+	}
+
+	/**
+	 * @return the seriesInfo
+	 */
+	public Program getSeriesInfo() {
+		return seriesInfo;
+	}
+
+	/**
+	 * @param seriesInfo the seriesInfo to set
+	 */
+	public void setSeriesInfo(Program seriesInfo) {
+		this.seriesInfo = seriesInfo;
 	}
 }
