@@ -8,7 +8,7 @@
   
   <groupId>org.schedulesdirect</groupId>
   <artifactId>sdjson-api</artifactId>
-  <version>0.20131021.2</version>
+  <version>0.20131021.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>sdjson-api</name>
