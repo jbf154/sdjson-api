@@ -63,8 +63,13 @@ public class Program {
 	/**
 	 * The expected format of the original airing field
 	 */
-	static public final SimpleDateFormat ORIG_FMT = new SimpleDateFormat("yyyy-MM-dd");
-	static { ORIG_FMT.setTimeZone(TimeZone.getDefault()); }
+	static public final String ORIG_FMT = "yyyy-MM-dd";
+	
+	static private SimpleDateFormat getOrigAirDateFormat() {
+		SimpleDateFormat fmt = new SimpleDateFormat(ORIG_FMT);
+		fmt.setTimeZone(TimeZone.getDefault());
+		return fmt;
+	}
 		
 	/**
 	 * The color code of a program
@@ -622,7 +627,7 @@ public class Program {
 			madeForTv = src.optBoolean("madeForTv");
 			episodeTitle = src.optString("episodeTitle150");
 			String orig = src.optString("originalAirDate", "");
-			originalAirDate = orig.length() > 0 && !orig.startsWith("0") ? ORIG_FMT.parse(src.getString("originalAirDate")) : null;
+			originalAirDate = orig.length() > 0 && !orig.startsWith("0") ? getOrigAirDateFormat().parse(src.getString("originalAirDate")) : null;
 			descriptionLanguage = descs != null ? src.optString("descriptionLanguage", null) : null;
 			String srcType = src.optString("sourceType").toUpperCase();
 			try {
