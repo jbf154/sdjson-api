@@ -133,9 +133,13 @@ public class ProgramTest extends SdjsonTestSuite {
 	@Test(expected=InvalidJsonObjectException.class)
 	public void validateNoMainTitleInTitlesInCtor() throws Exception {
 		JSONObject input = new JSONObject(getRandomSampleProgram());
-		JSONObject o = input.getJSONObject(OBJ_TITLES);
-		o.remove(TITLES_PROP_MAIN);
-		input.put(OBJ_TITLES, o);
+		JSONArray o = input.getJSONArray(OBJ_TITLES);
+		for(int i = 0; i < o.length(); ++i) {
+			if(o.getJSONObject(i).has(TITLES_PROP_MAIN)) {
+				o.remove(i);
+				break;
+			}
+		}
 		new Program(input, CLNT);
 	}
 

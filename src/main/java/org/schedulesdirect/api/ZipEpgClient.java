@@ -76,7 +76,7 @@ public class ZipEpgClient extends EpgClient {
 	/**
 	 * The zip file version this grabber generates
 	 */
-	static public final int ZIP_VER = 7;
+	static public final int ZIP_VER = 8;
 	/**
 	 * The default charset encoding used for all data in the generated zip file
 	 */
@@ -114,7 +114,6 @@ public class ZipEpgClient extends EpgClient {
 	private Map<String, Program> progCache;
 	private boolean closed;
 	private boolean detailsFetched;
-	private boolean existingVfs;
 
 	/**
 	 * Constructor
@@ -142,52 +141,55 @@ public class ZipEpgClient extends EpgClient {
 		} catch (URISyntaxException e1) {
 			throw new RuntimeException(e1);
 		}
-		
 		try {
-			this.vfs = FileSystems.newFileSystem(fsUri, Collections.<String, Object>emptyMap());
-			existingVfs = false;
-		} catch(FileSystemAlreadyExistsException e) {
-			this.vfs = FileSystems.getFileSystem(fsUri);
-			existingVfs = true;
-		}
-		Path verFile = vfs.getPath(ZIP_VER_FILE);
-		if(Files.exists(verFile)) {
-			try(InputStream ins = Files.newInputStream(verFile)) {
-				int ver = Integer.parseInt(IOUtils.toString(ins, ZIP_CHARSET.toString()));
-				if(ver != ZIP_VER)
-					throw new IOException(String.format("Zip file is not expected version! [v=%d; e=%d]", ver, ZIP_VER));
-			}
-		} else
-			throw new IOException(String.format("Zip file of version %d required!", ZIP_VER));
-		LOG.debug(String.format("Zip file format validated! [version=%d]", ZIP_VER));
-		lineups = new HashMap<String, Lineup>();
-		try(InputStream ins = Files.newInputStream(vfs.getPath(LINEUPS_LIST))) {
-			String input = IOUtils.toString(ins, ZIP_CHARSET.toString());
-			JSONObject o;
 			try {
-				o = new JSONObject(input);
-			} catch(JSONException e) {
-				throw new JsonEncodingException(String.format("ZipLineups: %s", e.getMessage()), e, input);
+				this.vfs = FileSystems.newFileSystem(fsUri, Collections.<String, Object>emptyMap());
+			} catch(FileSystemAlreadyExistsException e) {
+				this.vfs = FileSystems.getFileSystem(fsUri);
 			}
-			try {
-				JSONArray lineups = o.getJSONArray("lineups");
-				for(int i = 0; i < lineups.length(); ++i) {
-					JSONObject l = lineups.getJSONObject(i);
-					this.lineups.put(l.getString("uri"), new Lineup(l.getString("name"), l.getString("location"), l.getString("uri"), l.getString("type"), this));
+			Path verFile = vfs.getPath(ZIP_VER_FILE);
+			if(Files.exists(verFile)) {
+				try(InputStream ins = Files.newInputStream(verFile)) {
+					int ver = Integer.parseInt(IOUtils.toString(ins, ZIP_CHARSET.toString()));
+					if(ver != ZIP_VER)
+						throw new IOException(String.format("Zip file is not expected version! [v=%d; e=%d]", ver, ZIP_VER));
 				}
-			} catch(JSONException e) {
-				throw new InvalidJsonObjectException(String.format("ZipLineups: %s", e.getMessage()), e, o.toString(3));
+			} else
+				throw new IOException(String.format("Zip file of version %d required!", ZIP_VER));
+			LOG.debug(String.format("Zip file format validated! [version=%d]", ZIP_VER));
+			lineups = new HashMap<String, Lineup>();
+			try(InputStream ins = Files.newInputStream(vfs.getPath(LINEUPS_LIST))) {
+				String input = IOUtils.toString(ins, ZIP_CHARSET.toString());
+				JSONObject o;
+				try {
+					o = new JSONObject(input);
+				} catch(JSONException e) {
+					throw new JsonEncodingException(String.format("ZipLineups: %s", e.getMessage()), e, input);
+				}
+				try {
+					JSONArray lineups = o.getJSONArray("lineups");
+					for(int i = 0; i < lineups.length(); ++i) {
+						JSONObject l = lineups.getJSONObject(i);
+						this.lineups.put(l.getString("uri"), new Lineup(l.getString("name"), l.getString("location"), l.getString("uri"), l.getString("type"), this));
+					}
+				} catch(JSONException e) {
+					throw new InvalidJsonObjectException(String.format("ZipLineups: %s", e.getMessage()), e, o.toString(3));
+				}
 			}
+			String vfsKey = getSrcZipKey(zip);
+			AtomicInteger i = CLNT_COUNT.get(vfsKey);
+			if(i == null) {
+				i = new AtomicInteger(0);
+				CLNT_COUNT.put(vfsKey, i);
+			}
+			i.incrementAndGet();
+			closed = false;
+			detailsFetched = false;
+		} catch(Throwable t) {
+			if(vfs != null)
+				try { close(); } catch(IOException e) { LOG.error("IOError closing VFS!", e); }
+			throw t;
 		}
-		String vfsKey = getSrcZipKey(zip);
-		AtomicInteger i = CLNT_COUNT.get(vfsKey);
-		if(i == null) {
-			i = new AtomicInteger(0);
-			CLNT_COUNT.put(vfsKey, i);
-		}
-		i.incrementAndGet();
-		closed = false;
-		detailsFetched = false;		
 	}
 	
 	/**
@@ -228,11 +230,9 @@ public class ZipEpgClient extends EpgClient {
 			String vfsKey = getSrcZipKey(src);
 			AtomicInteger i = CLNT_COUNT.get(vfsKey);
 			int v = i != null ? i.decrementAndGet() : 0;
-			if(v == 0 && !existingVfs) {
+			if(v <= 0) {
 				LOG.debug("Calling close() for " + vfsKey);
 				vfs.close();
-			} else if(existingVfs) { 
-				LOG.debug("Not closing filesystem object: created from getFileSystem()");
 			} else if(LOG.isDebugEnabled())
 				LOG.debug(String.format("Skipped close() for %s; c=%d", vfsKey, i != null ? i.get() : Integer.MIN_VALUE));
 			closed = true;
@@ -242,6 +242,7 @@ public class ZipEpgClient extends EpgClient {
 	@Override
 	protected void finalize() throws Throwable {
 		super.finalize();
+		CLNT_COUNT.get(getSrcZipKey(src)).set(0);
 		close();
 	}
 

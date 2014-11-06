@@ -22,8 +22,6 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.json.JSONObject;
 import org.schedulesdirect.api.exception.InvalidJsonObjectException;
@@ -42,52 +40,20 @@ import org.schedulesdirect.api.exception.SilentInvalidJsonObjectException;
  *
  */
 public class Station {
-
-	static private final Pattern DIM_REGEX = Pattern.compile("(w|h)=(\\d+)px");
 	
-	// ele 0 == width; ele 1 == height
-	static private int[] extractLogoDimensions(String src) {
-		String data[] = src.split("\\|");
-		if(data.length != 2)
-			throw new IllegalArgumentException("Invalid dim data!");
-		int[] dim = new int[2];
-		for(String s : data) {
-			Matcher m = DIM_REGEX.matcher(s);
-			if(!m.matches())
-				throw new IllegalArgumentException("Invalid dim data!");
-			String d = m.group(1);
-			String i = m.group(2);
-			switch(d) {
-				case "w":
-					dim[0] = Integer.parseInt(i); break;
-				case "h":
-					dim[1] = Integer.parseInt(i); break;
-				default:
-					throw new IllegalArgumentException("Invalid dim data!");
-			}
-		}
-		if(dim[0] == 0 || dim[1] == 0)
-			throw new IllegalArgumentException("Invalid dim data!");
-		return dim;
-	}
-
 	public class Logo {
 				
 		private URL url;
 		private int width;
 		private int height;
-//		private String md5;
-//		private Date lastModified;
+		private String md5;
 		
 		private Logo(JSONObject src) throws InvalidJsonObjectException {
 			try {
 				url = new URL(src.getString("URL"));
-				int[] dim = extractLogoDimensions(src.getString("dimension"));
-				width = dim[0];
-				height = dim[1];
-				//TMSBUG: Is the caching data removed permanently?
-//				md5 = src.getString("md5");
-//				lastModified = Config.get().getDateTimeFormat().parse(src.getString("modified"));
+				width = src.getInt("width");
+				height = src.getInt("height");
+				md5 = src.getString("md5");
 			} catch (Throwable e) {
 				throw new SilentInvalidJsonObjectException(e);
 			}
@@ -153,7 +119,28 @@ public class Station {
 		@Override
 		public String toString() {
 			return "Logo [url=" + url + ", width=" + width + ", height="
-					+ height + "]";
+					+ height + ", md5=" + md5 + "]";
+		}
+
+		/**
+		 * @return the md5
+		 */
+		public String getMd5() {
+			return md5;
+		}
+
+		/**
+		 * @param height the height to set
+		 */
+		public void setHeight(int height) {
+			this.height = height;
+		}
+
+		/**
+		 * @param md5 the md5 to set
+		 */
+		public void setMd5(String md5) {
+			this.md5 = md5;
 		}
 	}
 	

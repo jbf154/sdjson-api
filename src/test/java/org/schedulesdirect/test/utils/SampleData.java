@@ -61,7 +61,7 @@ public class SampleData {
 	}
 	
 	private static boolean isFresh(File f) {
-		return f != null && f.canRead() && System.currentTimeMillis() - f.lastModified() < 1000L * 7 * 86400;
+		return f != null && f.canRead() && f.length() > 0 && System.currentTimeMillis() - f.lastModified() < 1000L * 7 * 86400;
 	}
 	
 	public static boolean updateFor(SampleType type, boolean forceUpdate) throws IOException {

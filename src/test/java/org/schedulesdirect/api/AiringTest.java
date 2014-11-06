@@ -110,7 +110,7 @@ public class AiringTest extends SdjsonTestSuite {
 			LOG.warn(String.format("%d of %d samples (%s%%) failed to load!%n%s%n", failed, SAMPLE_DATA.size(), String.format("%.2f", 100.0F * failed / SAMPLE_DATA.size()), sb));
 		else if(LOG.isDebugEnabled())
 			LOG.debug("No load failures!");
-		if(failed >= SAMPLE_DATA.size() / 10)
+		if(failed > 0 && failed >= SAMPLE_DATA.size() / 10)
 			throw new IOException("Too many load failures! Halting testing now.");
 		SAMPLE_DATA.clear();
 	}

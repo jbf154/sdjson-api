@@ -263,6 +263,54 @@ public class Program {
 		public String getCharacterName() {
 			return characterName;
 		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((name == null) ? 0 : name.hashCode());
+			result = prime * result
+					+ ((nameId == null) ? 0 : nameId.hashCode());
+			result = prime * result
+					+ ((personId == null) ? 0 : personId.hashCode());
+			result = prime * result + ((role == null) ? 0 : role.hashCode());
+			return result;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Credit other = (Credit) obj;
+			if (name == null) {
+				if (other.name != null)
+					return false;
+			} else if (!name.equals(other.name))
+				return false;
+			if (nameId == null) {
+				if (other.nameId != null)
+					return false;
+			} else if (!nameId.equals(other.nameId))
+				return false;
+			if (personId == null) {
+				if (other.personId != null)
+					return false;
+			} else if (!personId.equals(other.personId))
+				return false;
+			if (role != other.role)
+				return false;
+			return true;
+		}
 	}
 	
 	static public class Team {
@@ -476,7 +524,7 @@ public class Program {
 	private String[] advisories;
 	private String alternateEpisodeNumber;
 	private String alternateTitle;
-	private Credit[] credits;
+	private Set<Credit> credits;
 	private String alternateDescription;
 	private String alternateDescriptionShort;
 	private String[] shortDescriptions;
@@ -528,13 +576,21 @@ public class Program {
 				year = Integer.parseInt(movieInfo.get("year").toString());
 			else
 				year = 0;
-			JSONObject titles = src.getJSONObject("titles");
-			title = titles.getString("title120");
 			shortTitles = new String[4];
-			shortTitles[0] = titles.optString("title70");
-			shortTitles[1] = titles.optString("title40");
-			shortTitles[2] = titles.optString("title20");
-			shortTitles[3] = titles.optString("title10");
+			JSONArray titles = src.getJSONArray("titles");
+			for(int i = 0; i < titles.length(); ++i) {
+				JSONObject o = titles.getJSONObject(i);
+				if(o.has("title120"))
+					title = o.getString("title120");
+				else {
+					shortTitles[0] = shortTitles[0] == null || shortTitles[0].length() == 0 ? o.optString("title70") : shortTitles[0];
+					shortTitles[1] = shortTitles[1] == null || shortTitles[1].length() == 0 ? o.optString("title40") : shortTitles[1];
+					shortTitles[2] = shortTitles[2] == null || shortTitles[2].length() == 0 ? o.optString("title20") : shortTitles[2];
+					shortTitles[3] = shortTitles[3] == null || shortTitles[3].length() == 0 ? o.optString("title10") : shortTitles[3];
+				}
+			}
+			if(title == null || title.length() == 0)
+				throw new IllegalArgumentException("No title120 provided!");
 			episodeNumber = src.optString("syndicatedEpisodeNumber");
 			Collection<QualityRating> ratingObjs = new ArrayList<>();
 			if(movieInfo != null && movieInfo.has("qualityRating")) {
@@ -612,7 +668,8 @@ public class Program {
 				for(int i = 0; i < crew.length(); ++i)
 					castAndCrew.add(new Credit(crew.getJSONObject(i)));				
 			}
-			credits = castAndCrew.toArray(new Credit[0]);
+			credits = new HashSet<Credit>();
+			credits.addAll(castAndCrew);
 			
 			alternateTitle = src.optString("alternateTitle");
 			alternateEpisodeNumber = src.has("alternateSyndicatedEpisodeNumber") ? src.getString("alternateSyndicatedEpisodeNumber") : null;
@@ -802,7 +859,7 @@ public class Program {
 	 * @return An array of credits for this program; never null but may be empty if no data is available
 	 */
 	public Credit[] getCredits() {
-		return credits;
+		return credits.toArray(new Credit[0]);
 	}
 
 	/**
@@ -931,7 +988,7 @@ public class Program {
 				+ alternateTitle
 				+ ", credits="
 				+ (credits != null ? Arrays.asList(credits).subList(0,
-						Math.min(credits.length, maxLen)) : null)
+						Math.min(credits.size(), maxLen)) : null)
 				+ ", alternateDescription="
 				+ alternateDescription
 				+ ", alternateDescriptionShort="
@@ -1080,7 +1137,9 @@ public class Program {
 	 * @param credits the credits to set
 	 */
 	public void setCredits(Credit[] credits) {
-		this.credits = credits;
+		this.credits.clear();
+		for(Credit c : credits)
+			this.credits.add(c);
 	}
 
 	/**

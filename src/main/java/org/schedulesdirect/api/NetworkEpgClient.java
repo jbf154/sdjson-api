@@ -512,17 +512,21 @@ public class NetworkEpgClient extends EpgClient {
 					JSONObject prog;
 					try {
 						prog = new JSONObject(input);
+						if(JsonResponseUtils.isErrorResponse(prog) && JsonResponseUtils.getErrorCode(prog) == ApiResponse.INVALID_PROGID) {
+							progs.put(prog.getString("programID"), null);
+							continue;
+						}
 					} catch(JSONException e) {
 						throw new JsonEncodingException(String.format("Program: %s", e.getMessage()), e, input);
 					}
 					try {
 						Program p = new Program(prog, this);
 						String key = p.getId();
-						progs.put(p.getId(), p);
+						progs.put(key, p);
 						if(useCache)
 							CACHE.put(getCacheKeyForProgram(key), p);
 					} catch(JSONException e) {
-						throw new InvalidJsonObjectException(String.format(""), e, prog.toString(3));
+						throw new InvalidJsonObjectException(String.format("Program[%s] is not valid!", prog.optString("programID", "unknown")), e, prog.toString(3));
 					}
 				}
 			}

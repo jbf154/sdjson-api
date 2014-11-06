@@ -35,6 +35,8 @@ public final class ApiResponse {
 	
 	static public final int INVALID_PROGID = 6000;
 	
+	static public final int SCHEDULE_QUEUED = 7000;
+	
 	static public final int NOT_PROVIDED = -1;
 
 	private ApiResponse() {}
