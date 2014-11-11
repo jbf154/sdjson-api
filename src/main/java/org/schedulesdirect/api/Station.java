@@ -157,6 +157,7 @@ public class Station {
 	private int atscMinorNumber;
 	private String language;
 	private Airing[] airings;
+	private boolean isCommercialFree;
 	private Logo logo;
 	private EpgClient epgClnt;
 	
@@ -198,6 +199,7 @@ public class Station {
 			atscMajorNumber = tuningDetails.optInt("atscMajor", 0);
 			atscMinorNumber = tuningDetails.optInt("atscMinor", 0);
 			language = src.optString("language");
+			isCommercialFree = src.optBoolean("isCommercialFree", false);
 		} catch (Throwable t) {
 			throw new InvalidJsonObjectException(String.format("Station[%s]: %s", id, t.getMessage()), t, String.format("src:%n%s%n%ntuning:%s", src.toString(3), tuningDetails.toString(3)));
 		}
@@ -510,5 +512,19 @@ public class Station {
 		} else if (!id.equals(other.id))
 			return false;
 		return true;
+	}
+
+	/**
+	 * @return the isCommercialFree
+	 */
+	public boolean isCommercialFree() {
+		return isCommercialFree;
+	}
+
+	/**
+	 * @param isCommercialFree the isCommercialFree to set
+	 */
+	public void setCommercialFree(boolean isCommercialFree) {
+		this.isCommercialFree = isCommercialFree;
 	}
 }
