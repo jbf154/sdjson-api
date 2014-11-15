@@ -175,8 +175,15 @@ public final class JsonRequest {
 		try {
 			HttpResponse resp = submitRaw(reqData);
 			int status = resp.getStatusLine().getStatusCode();
-			if(failOnStatusError && resp.getStatusLine().getStatusCode() >= 400)
+			if(failOnStatusError && resp.getStatusLine().getStatusCode() >= 400) {
+				if(Config.get().captureHttpContent()) {
+					InputStream ins = resp.getEntity().getContent();
+					Path f = HttpUtils.captureContentToDisk(ins);
+					ins.close();
+					audit.append(String.format("<<<output: [see %s]%n", f.toFile().getAbsolutePath()));
+				}
 				throw new InvalidHttpResponseException(String.format("HTTP response returned an error status! [%d]", status), status, resp.getStatusLine().getReasonPhrase());
+			}
 			InputStream ins = resp.getEntity().getContent();
 			if(Config.get().captureHttpContent()) {
 				Path f = HttpUtils.captureContentToDisk(ins);
