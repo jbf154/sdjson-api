@@ -34,6 +34,7 @@ public final class ApiResponse {
 	static public final int NO_LINEUPS = 4102;
 	
 	static public final int INVALID_PROGID = 6000;
+	static public final int PROGRAMID_QUEUED = 6001;
 	
 	static public final int SCHEDULE_QUEUED = 7000;
 	
