@@ -69,7 +69,7 @@ public class AiringTest extends SdjsonTestSuite {
 			if(!SampleData.exists(SampleType.SCHEDULES))
 				throw new IOException("No sample data available!", e);
 			else
-				LOG.warn("Error downloading fresh sample data; using existing data instead!");
+				LOG.warn("Error downloading fresh sample data; using existing data instead!", e);
 		}
 		LineIterator itr = FileUtils.lineIterator(SampleData.locate(SampleType.SCHEDULES), "UTF-8");
 		while(itr.hasNext())
