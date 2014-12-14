@@ -276,9 +276,15 @@ public class Airing {
 			joinedInProgress = src.optBoolean("joinedInProgress");
 			leftInProgress = src.optBoolean("leftInProgress");
 			contentSource = src.optString("netSyndicationSource");
-			partNum = src.optInt("partNumber");
+			JSONObject partInfo = src.optJSONObject("multipart");
+			if(partInfo != null) {
+				partNum = partInfo.getInt("partNumber");
+				totalParts = partInfo.getInt("totalParts");
+			} else {
+				partNum = 0;
+				totalParts = 0;
+			}
 			newAiring = src.optBoolean("new");
-			totalParts = src.optInt("numberOfParts");
 			String live = src.optString("liveTapeDelay", LiveStatus.NONE.toString()).toUpperCase();
 			try {
 				liveStatus = live.length() == 0 ? LiveStatus.NONE : LiveStatus.valueOf(live);
