@@ -21,12 +21,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.LineIterator;
 import org.apache.commons.logging.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -45,8 +42,8 @@ import org.schedulesdirect.test.utils.SampleData.SampleType;
 public class AiringTest extends SdjsonTestSuite {
 	static private final Log LOG = Logging.getLogger(AiringTest.class);
 	
-	static public final List<String> SAMPLE_DATA = new ArrayList<>();
-	static public final List<String> SAMPLE_AIRS = new ArrayList<>();
+	static public String SAMPLE_DATA = null;
+	static public JSONArray SAMPLE_AIRS = null;
 
 	static private final Random RNG = new Random();
 
@@ -58,7 +55,7 @@ public class AiringTest extends SdjsonTestSuite {
 
 	@AfterClass
 	static public void cleanup() {
-		SAMPLE_AIRS.clear();
+		SAMPLE_AIRS = null;
 	}
 
 	static private void initJsonData() throws Exception {
@@ -71,20 +68,20 @@ public class AiringTest extends SdjsonTestSuite {
 			else
 				LOG.warn("Error downloading fresh sample data; using existing data instead!", e);
 		}
-		LineIterator itr = FileUtils.lineIterator(SampleData.locate(SampleType.SCHEDULES), "UTF-8");
-		while(itr.hasNext())
-			SAMPLE_DATA.add(itr.nextLine());
+		SAMPLE_DATA = FileUtils.readFileToString(SampleData.locate(SampleType.SCHEDULES), "UTF-8");
 	}
 	
 	static private void loadAllSamples() throws Exception {
+		SAMPLE_AIRS = new JSONArray();
 		final String PROP = "sdjson.capture.json-errors";
 		String capVal = System.setProperty(PROP, "1");
 		assertTrue(Config.get().captureJsonParseErrors());
 		int failed = 0;
 		StringBuilder sb = new StringBuilder();
 		Station s = mock(Station.class);
-		for(int i = 0; i < SAMPLE_DATA.size(); ++i) {
-			JSONObject input = new JSONObject(SAMPLE_DATA.get(i));
+		JSONArray schedArray = new JSONArray(SAMPLE_DATA);
+		for(int i = 0; i < schedArray.length(); ++i) {
+			JSONObject input = schedArray.getJSONObject(i);
 			JSONArray airings = input.optJSONArray("programs");
 			if(airings != null)
 				for(int j = 0; j < airings.length(); ++j) {
@@ -94,9 +91,9 @@ public class AiringTest extends SdjsonTestSuite {
 					try {
 						JSONObject o = airings.getJSONObject(j);
 						new Airing(o, p, s);
-						SAMPLE_AIRS.add(o.toString());
+						SAMPLE_AIRS.put(o);
 					} catch(InvalidJsonObjectException e) {
-						sb.append(String.format("\t(line %d:%d) %s: %s%n", i + 1, j, input.optString("programID", "<UNKNOWN>"), e.getMessage()));
+						sb.append(String.format("\t(Element %d:%d) %s: %s%n", i, j, input.optString("programID", "<UNKNOWN>"), e.getMessage()));
 						++failed;
 					}
 				}
@@ -107,22 +104,22 @@ public class AiringTest extends SdjsonTestSuite {
 			System.setProperty(PROP, capVal);
 
 		if(failed > 0)
-			LOG.warn(String.format("%d of %d samples (%s%%) failed to load!%n%s%n", failed, SAMPLE_DATA.size(), String.format("%.2f", 100.0F * failed / SAMPLE_DATA.size()), sb));
+			LOG.warn(String.format("%d of %d samples (%s%%) failed to load!%n%s%n", failed, schedArray.length(), String.format("%.2f", 100.0F * failed / schedArray.length()), sb));
 		else if(LOG.isDebugEnabled())
 			LOG.debug("No load failures!");
-		if(failed > 0 && failed >= SAMPLE_DATA.size() / 10)
+		if(failed > 0 && failed >= schedArray.length() / 10)
 			throw new IOException("Too many load failures! Halting testing now.");
-		SAMPLE_DATA.clear();
+		SAMPLE_DATA = null;
 	}
 	
-	private String getRandomSample() {
-		return SAMPLE_AIRS.get(RNG.nextInt(SAMPLE_AIRS.size()));
+	private JSONObject getRandomSample() {
+		return SAMPLE_AIRS.getJSONObject(RNG.nextInt(SAMPLE_AIRS.length()));
 	}
 
 	
 	@Test(expected=IllegalArgumentException.class)
 	public void setNullId() throws Exception {
-		JSONObject src = new JSONObject(getRandomSample());
+		JSONObject src = getRandomSample();
 		Program p = mock(Program.class);
 		when(p.getId()).thenReturn(src.getString("programID"));
 		Station s = mock(Station.class);
@@ -132,7 +129,7 @@ public class AiringTest extends SdjsonTestSuite {
 	
 	@Test(expected=IllegalArgumentException.class)
 	public void setNonMatchingId() throws Exception {
-		JSONObject src = new JSONObject(getRandomSample());
+		JSONObject src = getRandomSample();
 		Program p = mock(Program.class);
 		when(p.getId()).thenReturn(src.getString("programID"));
 		Station s = mock(Station.class);
@@ -142,7 +139,7 @@ public class AiringTest extends SdjsonTestSuite {
 	
 	@Test(expected=IllegalArgumentException.class)
 	public void setNullStation() throws Exception {
-		JSONObject src = new JSONObject(getRandomSample());
+		JSONObject src = getRandomSample();
 		Program p = mock(Program.class);
 		when(p.getId()).thenReturn(src.getString("programID"));
 		Station s = mock(Station.class);
@@ -152,7 +149,7 @@ public class AiringTest extends SdjsonTestSuite {
 	
 	@Test(expected=IllegalArgumentException.class)
 	public void setNullProgram() throws Exception {
-		JSONObject src = new JSONObject(getRandomSample());
+		JSONObject src = getRandomSample();
 		Program p = mock(Program.class);
 		when(p.getId()).thenReturn(src.getString("programID"));
 		Station s = mock(Station.class);
@@ -162,7 +159,7 @@ public class AiringTest extends SdjsonTestSuite {
 	
 	@Test
 	public void setProgram() throws Exception {
-		JSONObject src = new JSONObject(getRandomSample());
+		JSONObject src = getRandomSample();
 		Program p = mock(Program.class);
 		when(p.getId()).thenReturn(src.getString("programID"));
 		Station s = mock(Station.class);

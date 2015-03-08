@@ -118,7 +118,7 @@ public class Lineup {
 				JSONObject resp = new JSONObject(input);
 				channelMap = resp.getJSONArray("map");
 				Map<String, JSONObject> tuningData = getTuningData(resp.getJSONArray("map"));
-				fillStations(resp.getJSONArray("stations"), tuningData);
+				fillStations(resp.getJSONObject("stations"), tuningData);
 				fillMetadata(resp.getJSONObject("metadata"));
 				if(physicalMapping)
 					buildChannelMapViaAtscData();
@@ -157,10 +157,10 @@ public class Lineup {
 		return result;
 	}
 	
-	private void fillStations(final JSONArray stationsArray, final Map<String, JSONObject> tuningData) throws InvalidJsonObjectException {
+	private void fillStations(final JSONObject stationsMap, final Map<String, JSONObject> tuningData) throws InvalidJsonObjectException {
 		stations = new HashMap<String, Station>();
-		for(int i = 0; i < stationsArray.length(); ++i) {
-			JSONObject s = stationsArray.getJSONObject(i);
+		for(Object k : stationsMap.keySet()) {
+			JSONObject s = stationsMap.getJSONObject(k.toString());
 			String id = s.getString("stationID");
 			stations.put(id, new Station(s, tuningData.get(id), epgClnt));
 		}

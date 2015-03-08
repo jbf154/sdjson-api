@@ -6,3 +6,4 @@ target/
 /.project
 /.gradle/
 /build/
+/.settings/

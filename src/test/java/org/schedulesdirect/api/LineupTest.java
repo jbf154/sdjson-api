@@ -123,7 +123,7 @@ public class LineupTest extends SdjsonTestSuite {
 	@Test
 	public void testFetchDetailsMetadataOnly() throws Exception {
 		JSONObject map = new JSONObject();
-		map.put("stations", new JSONArray());
+		map.put("stations", new JSONObject());
 		map.put("map", new JSONArray());
 		map.put("metadata", new JSONObject(String.format("{\"modified\":\"%s\"}", Config.get().getDateTimeFormat().format(new Date()))));
 		EpgClient clnt = mock(EpgClient.class);
@@ -137,7 +137,7 @@ public class LineupTest extends SdjsonTestSuite {
 	@Test
 	public void testFetchDetailsWithAirings() throws Exception {
 		JSONObject map = new JSONObject();
-		map.put("stations", new JSONArray());
+		map.put("stations", new JSONObject());
 		map.put("map", new JSONArray());
 		map.put("metadata", new JSONObject(String.format("{\"modified\":\"%s\"}", Config.get().getDateTimeFormat().format(new Date()))));
 		EpgClient clnt = mock(EpgClient.class);
