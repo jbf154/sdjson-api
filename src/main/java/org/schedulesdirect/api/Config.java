@@ -41,11 +41,11 @@ public final class Config {
 	 */
 	static public final String API_VERSION = initApiVersion();
 	static private String initApiVersion() {
-		try(InputStream apiProps = Config.class.getResourceAsStream("/sdjson-api.properties")) {
+		try(InputStream apiProps = Config.class.getResourceAsStream("/sdjson-api-versioning.properties")) {
 			if(apiProps != null) {
 				Properties p = new Properties();
 				p.load(apiProps);
-				return p.getProperty("version");
+				return p.getProperty("VERSION_DISPLAY");
 			}			
 		} catch(IOException e) {
 			LOG.error("IOError", e);

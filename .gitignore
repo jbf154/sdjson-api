@@ -1,3 +1,8 @@
 target/
 /ut_data
 *.log
+/bin/
+/.classpath
+/.project
+/.gradle/
+/build/
