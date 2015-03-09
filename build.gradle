@@ -17,7 +17,9 @@
 plugins {
 	id 'java'
 	id 'eclipse'
+	id 'maven-publish'
 	id 'net.nemerosa.versioning' version '1.3.0'
+	id 'com.jfrog.bintray' version '1.1'
 }
 
 versioning {
@@ -31,6 +33,9 @@ versionFile {
 	file = props
 }
 
+group = 'org.schedulesdirect'
+version = versioning.info.display
+
 repositories {
 	mavenCentral()
 }
@@ -41,10 +46,75 @@ dependencies {
 	compile 'commons-io:commons-io:1.4'
 	compile 'commons-codec:commons-codec:1.3'
 	compile 'org.apache.httpcomponents:fluent-hc:4.2.1'
-	
+
 	testCompile 'log4j:log4j:1.2.17'	
 	testCompile 'org.powermock:powermock-module-junit4:1.5.4'
 	testCompile 'org.powermock:powermock-api-mockito:1.5.4'
 }
 
+task releaseSanityChecks << {
+	assert System.getProperty('bintray.user')
+	assert System.getProperty('bintray.key')
+	assert versioning.info.branch.startsWith('release/')
+	assert !versioning.info.display.endsWith('-SNAPSHOT')
+	assert !versioning.info.display.contains('-dirty')
+} 
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	classifier = 'javadoc'
+	from javadoc.destinationDir
+}
+
+artifacts {
+	archives sourcesJar, javadocJar
+}
+
+publishing {
+	publications {
+		mavenGoodies(MavenPublication) {
+			from components.java
+			artifact sourcesJar
+			artifact javadocJar
+			// Hopefully, some day this xml hack can be removed
+			pom.withXml {
+				asNode().dependencies.'*'.findAll {
+					it.scope.text() == 'runtime' && project.configurations.compile.allDependencies.find { dep ->
+						dep.name == it.artifactId.text()
+					}
+				}.each { it.scope*.value = 'compile' }
+			}
+		}
+	}
+}
+
+bintray {
+	user = System.getProperty('bintray.user')
+	key = System.getProperty('bintray.key')
+	publications = ['mavenGoodies']
+	publish = false
+	pkg {
+		repo = 'maven'
+		name = 'sdjson-api'
+		desc = 'A Java client implementation of the Schedules Direct JSON data service.'
+		websiteUrl = 'https://github.com/Slugger/sdjson-api'
+		issueTrackerUrl = 'https://github.com/Slugger/sdjson-api/issues'
+		vcsUrl = 'https://github.com/Slugger/sdjson-api.git'
+		licenses = ['Apache-2.0']
+		labels = ['tv', 'epg', 'json', 'schedulesdirect']
+		attributes= ['plat': ['java']]
+		publicDownloadNumbers = false
+		version {
+			name = project.version
+			desc = 'Initial support for Schedules Direct API 20141201.'
+			//vcsTag = '1.3.0'
+		}
+	}
+}
+
 compileJava.dependsOn versionFile
+bintrayUpload.dependsOn releaseSanityChecks
