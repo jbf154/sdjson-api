@@ -1,5 +1,5 @@
 /*
- *      Copyright 2012-2014 Battams, Derek
+ *      Copyright 2012-2015 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -296,6 +296,8 @@ public class NetworkEpgClient extends EpgClient {
 			}
 		} else if(JsonResponseUtils.getErrorCode(resp) != ApiResponse.NO_LINEUPS)
 			throw new IOException(String.format("Error getting lineups! [%s]", resp.optString("message")));
+		else
+			return new Lineup[0];
 		return list;
 	}
 	
