@@ -1,5 +1,5 @@
 /*
- *      Copyright 2014 Battams, Derek
+ *      Copyright 2014-2015 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ public class UserStatusTest extends SdjsonTestSuite {
 		Date expectedDate = new Date(d.getTime() - (d.getTime() % 1000));
 		assertEquals(expectedDate, us.getExpires());
 		assertEquals(expectedDate, us.getLastServerRefresh());
-		assertEquals(expectedDate, us.getNextSuggestedConnectTime());
 		assertEquals(4, us.getMaxLineups());
 	}
 	
