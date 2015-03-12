@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -304,32 +303,29 @@ public class NetworkEpgClient extends EpgClient {
 	@Override
 	protected Lineup[] searchForLineups(final String location, final String zip) throws IOException {
 		List<Lineup> hes = new ArrayList<Lineup>();
-		JSONObject resp;
+		JSONArray resp;
 		String input = factory.get(JsonRequest.Action.GET, String.format("%s?country=%s&postalcode=%s", RestNouns.HEADENDS, URLEncoder.encode(location, "UTF-8"), URLEncoder.encode(zip, "UTF-8")), hash, getUserAgent(), getBaseUrl()).submitForJson(null);
 		try {
-			resp = new JSONObject(input);			
+			resp = new JSONObject(input).getJSONArray("headends");			
 		} catch(JSONException e) {
 			throw new JsonEncodingException(String.format("SearchResp: %s", e.getMessage()), e, input);
 		}
 		
-		if(!JsonResponseUtils.isErrorResponse(resp)) {
-			try {
-				@SuppressWarnings("unchecked")
-				Iterator<String> itr = (Iterator<String>)resp.keys();
-				while(itr.hasNext()) {
-					String k = itr.next();
-					JSONObject headend = resp.getJSONObject(k);
-					String heLoc = headend.getString("location");
-					String heType = headend.getString("type");
-					JSONArray lineups = headend.getJSONArray("lineups");
-					for(int i = 0; i < lineups.length(); ++i) {
-						JSONObject lineup = lineups.getJSONObject(i);
-						hes.add(new Lineup(lineup.getString("name"), heLoc, lineup.getString("uri"), heType, this));
-					}
-				}				
-			} catch(JSONException e) {
-				throw new InvalidJsonObjectException(String.format("SearchResp: %s", e.getMessage()), e, resp.toString(3));
-			}
+		try {
+			for(int j = 0; j < resp.length(); ++j) {
+				JSONObject headendWrapper = resp.getJSONObject(j);
+				String k = headendWrapper.keys().next().toString();
+				JSONObject headend = headendWrapper.getJSONObject(k);
+				String heLoc = headend.getString("location");
+				String heType = headend.getString("type");
+				JSONArray lineups = headend.getJSONArray("lineups");
+				for(int i = 0; i < lineups.length(); ++i) {
+					JSONObject lineup = lineups.getJSONObject(i);
+					hes.add(new Lineup(lineup.getString("name"), heLoc, lineup.getString("uri"), heType, this));
+				}
+			}				
+		} catch(JSONException e) {
+			throw new InvalidJsonObjectException(String.format("SearchResp: %s", e.getMessage()), e, resp.toString(3));
 		}
 		return hes.toArray(new Lineup[hes.size()]);
 	}
