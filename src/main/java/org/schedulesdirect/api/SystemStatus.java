@@ -1,5 +1,5 @@
 /*
- *      Copyright 2013-2014 Battams, Derek
+ *      Copyright 2013-2015 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class SystemStatus {
 				if(statusDate == null || statusDate.before(objDate)) {
 					statusDate = objDate;
 					status = obj.getString("status");
-					statusMessage = obj.getString("details");
+					statusMessage = obj.getString("message");
 				}
 			} catch(Exception e) {
 				throw new InvalidJsonObjectException(String.format("SystemStatus: %s", e.getMessage()), e, src.toString(3));

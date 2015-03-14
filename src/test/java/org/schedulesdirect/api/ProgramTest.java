@@ -21,12 +21,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.LineIterator;
 import org.apache.commons.logging.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -48,7 +45,7 @@ public class ProgramTest extends SdjsonTestSuite {
 	
 	static public final String OBJ_TITLES = "titles";
 	static public final String TITLES_PROP_MAIN = "title120";
-	static public final List<String> SAMPLE_DATA = new ArrayList<String>();
+	static public JSONArray SAMPLE_DATA = new JSONArray();
 	
 	static private final Random RNG = new Random();
 	static private final EpgClient CLNT = mock(EpgClient.class);
@@ -62,7 +59,7 @@ public class ProgramTest extends SdjsonTestSuite {
 
 	@AfterClass
 	static public void cleanup() {
-		SAMPLE_DATA.clear();
+		SAMPLE_DATA = null;
 	}
 
 	static private void initJsonData() throws Exception {
@@ -75,9 +72,7 @@ public class ProgramTest extends SdjsonTestSuite {
 			else
 				LOG.warn("Failed to download fresh sample data; using existing data instead!");
 		}
-		LineIterator itr = FileUtils.lineIterator(SampleData.locate(SampleType.PROGRAMS), "UTF-8");
-		while(itr.hasNext())
-			SAMPLE_DATA.add(itr.nextLine());
+		SAMPLE_DATA = new JSONArray(FileUtils.readFileToString(SampleData.locate(SampleType.PROGRAMS), "UTF-8"));
 	}
 	
 	static private void loadAllSamples() throws Exception {
@@ -86,13 +81,13 @@ public class ProgramTest extends SdjsonTestSuite {
 		assertTrue(Config.get().captureJsonParseErrors());
 		int failed = 0;
 		StringBuilder sb = new StringBuilder();
-		for(int i = 0; i < SAMPLE_DATA.size(); ++i) {
-			JSONObject input = new JSONObject(SAMPLE_DATA.get(i));
+		for(int i = 0; i < SAMPLE_DATA.length(); ++i) {
+			JSONObject input = SAMPLE_DATA.getJSONObject(i);
 			try {
 				new Program(input, CLNT);
 			} catch(InvalidJsonObjectException e) {
-				sb.append(String.format("\t(line %d) %s%n", i + 1, e.getMessage()));
-				SAMPLE_DATA.set(i, null);
+				sb.append(String.format("\t(Element %d) %s%n", i, e.getMessage()));
+				SAMPLE_DATA.put(i, (JSONObject)null);
 				++failed;
 			}
 		}
@@ -102,8 +97,8 @@ public class ProgramTest extends SdjsonTestSuite {
 			System.setProperty(PROP, capVal);
 		
 		if(failed > 0) {
-			String msg = String.format("%d of %d samples (%s%%) failed to load!%n%s", failed, SAMPLE_DATA.size(), String.format("%.2f", 100.0F * failed / SAMPLE_DATA.size()), sb);
-			if(failed < SAMPLE_DATA.size() / 10)
+			String msg = String.format("%d of %d samples (%s%%) failed to load!%n%s", failed, SAMPLE_DATA.length(), String.format("%.2f", 100.0F * failed / SAMPLE_DATA.length()), sb);
+			if(failed < SAMPLE_DATA.length() / 10)
 				LOG.warn(msg);
 			else {
 				LOG.error(msg);
@@ -112,9 +107,9 @@ public class ProgramTest extends SdjsonTestSuite {
 		}			
 	}
 
-	private String getRandomSampleProgram() {
-		String s = null;
-		while(s == null) s = SAMPLE_DATA.get(RNG.nextInt(SAMPLE_DATA.size()));
+	private JSONObject getRandomSampleProgram() {
+		JSONObject s = null;
+		while(s == null) s = SAMPLE_DATA.getJSONObject(RNG.nextInt(SAMPLE_DATA.length()));
 		return s;
 	}
 	
@@ -125,14 +120,14 @@ public class ProgramTest extends SdjsonTestSuite {
 	
 	@Test(expected=InvalidJsonObjectException.class)
 	public void validateNoTitlesObjInCtor() throws Exception {
-		JSONObject input = new JSONObject(getRandomSampleProgram());
+		JSONObject input = getRandomSampleProgram();
 		input.remove(OBJ_TITLES);
 		new Program(input, CLNT);
 	}
 
 	@Test(expected=InvalidJsonObjectException.class)
 	public void validateNoMainTitleInTitlesInCtor() throws Exception {
-		JSONObject input = new JSONObject(getRandomSampleProgram());
+		JSONObject input = getRandomSampleProgram();
 		JSONArray o = input.getJSONArray(OBJ_TITLES);
 		for(int i = 0; i < o.length(); ++i) {
 			if(o.getJSONObject(i).has(TITLES_PROP_MAIN)) {
@@ -145,14 +140,14 @@ public class ProgramTest extends SdjsonTestSuite {
 
 	@Test(expected=InvalidJsonObjectException.class)
 	public void validateNoProgIdInCtor() throws Exception {
-		JSONObject input = new JSONObject(getRandomSampleProgram());
+		JSONObject input = getRandomSampleProgram();
 		input.remove("programID");
 		new Program(input, CLNT);
 	}
 
 	@Test
 	public void validateUnknownCredit() throws Exception {
-		JSONObject input = new JSONObject(getRandomSampleProgram());
+		JSONObject input = getRandomSampleProgram();
 		JSONArray credits = new JSONArray();
 		credits.put(new JSONObject("{\"role\":\"bad role\",\"name\": \"John Doe\"}"));
 		input.put("crew", credits);
@@ -167,7 +162,7 @@ public class ProgramTest extends SdjsonTestSuite {
 
 	@Test
 	public void validateKnownRoleCredit() throws Exception {
-		JSONObject input = new JSONObject(getRandomSampleProgram());
+		JSONObject input = getRandomSampleProgram();
 		JSONArray credits = new JSONArray();
 		credits.put(new JSONObject("{\"role\":\"Guest Star\",\"name\": \"John Doe\"}"));
 		input.put("cast", credits);
@@ -182,7 +177,7 @@ public class ProgramTest extends SdjsonTestSuite {
 	
 	@Test(expected=InvalidJsonObjectException.class)
 	public void validateInvalidCreditInput() throws Exception {
-		JSONObject input = new JSONObject(getRandomSampleProgram());
+		JSONObject input = getRandomSampleProgram();
 		JSONArray credits = new JSONArray();
 		credits.put("John Doe");
 		input.put("crew", credits);
@@ -192,14 +187,14 @@ public class ProgramTest extends SdjsonTestSuite {
 
 	@Test(expected=InvalidJsonObjectException.class)
 	public void validateInvalidGameTime() throws Exception {
-		JSONObject input = new JSONObject(getRandomSampleProgram());
+		JSONObject input = getRandomSampleProgram();
 		input.put("gameDatetime", "invalid");
 		new Program(input, CLNT);
 	}
 
 	@Test(expected=InvalidJsonObjectException.class)
 	public void validateInvalidOriginalAirDate() throws Exception {
-		JSONObject input = new JSONObject(getRandomSampleProgram());
+		JSONObject input = getRandomSampleProgram();
 		input.put("originalAirDate", "invalid");
 		new Program(input, CLNT);
 	}
@@ -212,14 +207,14 @@ public class ProgramTest extends SdjsonTestSuite {
 		rating.put("maxRating", "4");
 		rating.put("increment", ".5");
 		rating.put("ratingsBody", "TMS");
-		Program p = new Program(new JSONObject(getRandomSampleProgram()), CLNT);
+		Program p = new Program(getRandomSampleProgram(), CLNT);
 		p.setQualityRatings(new QualityRating[] { new FloatQualityRating(rating, "stars") });
 		assertEquals("2.5/4.0 stars", p.getQualityRatings()[0].toString());
 	}
 		
 	@Test
 	public void dontAllowDuplicateGenres() throws Exception {
-		JSONObject src = new JSONObject(getRandomSampleProgram());
+		JSONObject src = getRandomSampleProgram();
 		src.put("showType", "Special");
 		src.put("genres", new JSONArray(new String[] {"Special"}));
 		Program p = new Program(src, CLNT);

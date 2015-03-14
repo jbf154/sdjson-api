@@ -1,5 +1,5 @@
 /*
- *      Copyright 2012-2014 Battams, Derek
+ *      Copyright 2012-2015 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -44,7 +44,6 @@ public class UserStatus {
 	private String userId;
 	private Date expires;
 	private Date lastServerRefresh;
-	private Date nextSuggestedConnectTime;
 	private Message[] userMessages;
 	private Message[] systemMessages;
 	private Map<String, Date> lineupInfo;
@@ -66,7 +65,6 @@ public class UserStatus {
 				this.userId = src.getString("userId");
 			JSONObject acct = src.getJSONObject("account");
 			final SimpleDateFormat fmt = Config.get().getDateTimeFormat();
-			nextSuggestedConnectTime = fmt.parse(acct.getString("nextSuggestedConnectTime"));
 			expires = fmt.parse(acct.getString("expires"));
 			JSONArray msgs = acct.getJSONArray("messages");
 			userMessages = new Message[msgs.length()];
@@ -144,8 +142,6 @@ public class UserStatus {
 		builder.append(expires);
 		builder.append(", lastServerRefresh=");
 		builder.append(lastServerRefresh);
-		builder.append(", nextSuggestedConnectTime=");
-		builder.append(nextSuggestedConnectTime);
 		builder.append(", userMessages=");
 		builder.append(userMessages != null ? Arrays.asList(userMessages)
 				.subList(0, Math.min(userMessages.length, maxLen)) : null);
@@ -213,12 +209,5 @@ public class UserStatus {
 		}
 		builder.append("]");
 		return builder.toString();
-	}
-
-	/**
-	 * @return the nextSuggestedConnectTime
-	 */
-	public Date getNextSuggestedConnectTime() {
-		return nextSuggestedConnectTime;
 	}
 }

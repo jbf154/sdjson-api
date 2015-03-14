@@ -34,7 +34,7 @@ public abstract class EpgClient {
 	/**
 	 * The Schedules Direct server API version this client implements.
 	 */
-	static public final int API_VERSION = 20140530;
+	static public final int API_VERSION = 20141201;
 	
 	/**
 	 * Given a lineup id, generate the full, absolute URI path for the lineup

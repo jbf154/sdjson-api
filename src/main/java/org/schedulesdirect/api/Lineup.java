@@ -157,12 +157,12 @@ public class Lineup {
 		return result;
 	}
 	
-	private void fillStations(final JSONArray stationsArray, final Map<String, JSONObject> tuningData) throws InvalidJsonObjectException {
-		stations = new HashMap<String, Station>();
-		for(int i = 0; i < stationsArray.length(); ++i) {
-			JSONObject s = stationsArray.getJSONObject(i);
-			String id = s.getString("stationID");
-			stations.put(id, new Station(s, tuningData.get(id), epgClnt));
+	private void fillStations(final JSONArray stations, final Map<String, JSONObject> tuningData) throws InvalidJsonObjectException {
+		this.stations = new HashMap<String, Station>();		
+		for(int i = 0; i < stations.length(); ++i) {
+			JSONObject s = stations.getJSONObject(i);
+			String key = s.getString("stationID");
+			this.stations.put(key, new Station(s, tuningData.get(key), epgClnt));
 		}
 	}
 	
