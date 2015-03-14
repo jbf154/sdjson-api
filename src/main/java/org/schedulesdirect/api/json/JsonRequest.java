@@ -129,7 +129,7 @@ public final class JsonRequest {
 	 * @return The JSON encoded response received from the SD service
 	 * @throws IOException Thrown on any IO error encountered
 	 */
-	public String submitForJson(Object reqData, boolean ignoreContentType) throws IOException {
+	public String submitForJson(Object reqData) throws IOException {
 		String str = null;
 		boolean throwIt = false;
 		HttpResponse resp = submitRaw(reqData);
@@ -138,7 +138,7 @@ public final class JsonRequest {
 			throwIt = true;
 		try(InputStream ins = resp.getEntity().getContent()) {
 			str = IOUtils.toString(ins, "UTF-8");
-			if(throwIt && !ignoreContentType)
+			if(throwIt)
 				throw new JsonEncodingException("Request did not return expected content type!", str);
 			return str;
 		} finally {
@@ -152,17 +152,7 @@ public final class JsonRequest {
 			HttpUtils.captureToDisk(audit.toString());
 		}
 	}
-
-	/**
-	 * Submit this request; returns the JSON object response received; only call if the request is expected to return a JSON object in response
-	 * @param reqData The supporting data for the request; this is dependent on the action and obj target specified
-	 * @return The JSON encoded response received from the SD service
-	 * @throws IOException Thrown on any IO error encountered
-	 */
-	public String submitForJson(Object reqData) throws IOException {
-		return submitForJson(reqData, false);
-	}
-
+	
 	/**
 	 * Submit this request; returns the raw input stream of the content; caller responsible for closing stream when done.
 	 * @param reqData The supporting data for the request; this is dependent on the action and obj target specified
