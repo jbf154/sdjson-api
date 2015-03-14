@@ -306,16 +306,14 @@ public class NetworkEpgClient extends EpgClient {
 		JSONArray resp;
 		String input = factory.get(JsonRequest.Action.GET, String.format("%s?country=%s&postalcode=%s", RestNouns.HEADENDS, URLEncoder.encode(location, "UTF-8"), URLEncoder.encode(zip, "UTF-8")), hash, getUserAgent(), getBaseUrl()).submitForJson(null);
 		try {
-			resp = new JSONObject(input).getJSONArray("headends");			
+			resp = new JSONArray(input);			
 		} catch(JSONException e) {
 			throw new JsonEncodingException(String.format("SearchResp: %s", e.getMessage()), e, input);
 		}
 		
 		try {
 			for(int j = 0; j < resp.length(); ++j) {
-				JSONObject headendWrapper = resp.getJSONObject(j);
-				String k = headendWrapper.keys().next().toString();
-				JSONObject headend = headendWrapper.getJSONObject(k);
+				JSONObject headend = resp.getJSONObject(j);
 				String heLoc = headend.getString("location");
 				String heType = headend.getString("type");
 				JSONArray lineups = headend.getJSONArray("lineups");
