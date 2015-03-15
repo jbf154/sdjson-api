@@ -78,7 +78,7 @@ public class ZipEpgClient extends EpgClient {
 	/**
 	 * The zip file version this grabber generates
 	 */
-	static public final int ZIP_VER = 8;
+	static public final int ZIP_VER = 9;
 	/**
 	 * The default charset encoding used for all data in the generated zip file
 	 */
