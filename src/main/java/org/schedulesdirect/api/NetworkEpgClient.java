@@ -43,6 +43,8 @@ import org.schedulesdirect.api.json.JsonRequestFactory;
 import org.schedulesdirect.api.utils.JsonResponseUtils;
 import org.schedulesdirect.api.utils.UriUtils;
 
+import com.fasterxml.jackson.core.JsonParseException;
+
 /**
  * An implementation of EpgClient that accesses all data from the Schedules Direct JSON feed servers
  * 
@@ -224,8 +226,8 @@ public class NetworkEpgClient extends EpgClient {
 		JSONObject resp;
 		String input = factory.get(JsonRequest.Action.POST, RestNouns.LOGIN_TOKEN, hash, getUserAgent(), getBaseUrl()).submitForJson(creds);
 		try {
-			resp = new JSONObject(input);
-		} catch(JSONException e) {
+			resp = Config.get().getObjectMapper().readValue(input, JSONObject.class);
+		} catch(JsonParseException e) {
 			throw new JsonEncodingException(String.format("Token: %s", e.getMessage()), e, input);
 		}
 		if(!JsonResponseUtils.isErrorResponse(resp)) {
@@ -248,8 +250,8 @@ public class NetworkEpgClient extends EpgClient {
 		JSONObject resp;
 		String input = factory.get(JsonRequest.Action.GET, RestNouns.STATUS, hash, getUserAgent(), getBaseUrl()).submitForJson(null);
 		try {
-			resp = new JSONObject(input);
-		} catch(JSONException e) {
+			resp = Config.get().getObjectMapper().readValue(input, JSONObject.class);
+		} catch(JsonParseException e) {
 			throw new JsonEncodingException(String.format("Status[%s]: %s", id, e.getMessage()), e, input);
 		}
 		
@@ -277,8 +279,8 @@ public class NetworkEpgClient extends EpgClient {
 		JSONObject resp;
 		String input = factory.get(JsonRequest.Action.GET, RestNouns.LINEUPS, hash, getUserAgent(), getBaseUrl()).submitForJson(null);
 		try {
-			resp = new JSONObject(input);
-		} catch(JSONException e) {
+			resp = Config.get().getObjectMapper().readValue(input, JSONObject.class);
+		} catch(JsonParseException e) {
 			throw new JsonEncodingException(String.format("Lineups[%s]: %s", id, e.getMessage()), e, input);
 		}
 		
@@ -306,8 +308,8 @@ public class NetworkEpgClient extends EpgClient {
 		JSONArray resp;
 		String input = factory.get(JsonRequest.Action.GET, String.format("%s?country=%s&postalcode=%s", RestNouns.HEADENDS, URLEncoder.encode(location, "UTF-8"), URLEncoder.encode(zip, "UTF-8")), hash, getUserAgent(), getBaseUrl()).submitForJson(null);
 		try {
-			resp = new JSONArray(input);			
-		} catch(JSONException e) {
+			resp = Config.get().getObjectMapper().readValue(input, JSONArray.class);
+		} catch(JsonParseException e) {
 			throw new JsonEncodingException(String.format("SearchResp: %s", e.getMessage()), e, input);
 		}
 		
@@ -396,8 +398,8 @@ public class NetworkEpgClient extends EpgClient {
 			for(String obj : input) {
 				JSONObject o;
 				try {
-					o = new JSONObject(obj);
-				} catch(JSONException e) {
+					o = Config.get().getObjectMapper().readValue(obj, JSONObject.class);
+				} catch(JsonParseException e) {
 					throw new JsonEncodingException(String.format("ScheduleResp: %s", e.getMessage()), e, obj);
 				}
 				if(!JsonResponseUtils.isErrorResponse(o)) {
@@ -457,8 +459,8 @@ public class NetworkEpgClient extends EpgClient {
 				for(String input : (List<String>)IOUtils.readLines(resp)) {
 					JSONObject sched;
 					try {
-						sched = new JSONObject(input);
-					} catch(JSONException e) {
+						sched = Config.get().getObjectMapper().readValue(input, JSONObject.class);
+					} catch(JsonParseException e) {
 						throw new JsonEncodingException(String.format("Schedule: %s", e.getMessage()), e, input);
 					}
 					try {
@@ -507,12 +509,12 @@ public class NetworkEpgClient extends EpgClient {
 				for(String input : (List<String>)IOUtils.readLines(resp)) {
 					JSONObject prog;
 					try {
-						prog = new JSONObject(input);
+						prog = Config.get().getObjectMapper().readValue(input, JSONObject.class);
 						if(JsonResponseUtils.isErrorResponse(prog) && JsonResponseUtils.getErrorCode(prog) == ApiResponse.INVALID_PROGID) {
 							progs.put(prog.getString("programID"), null);
 							continue;
 						}
-					} catch(JSONException e) {
+					} catch(JsonParseException e) {
 						throw new JsonEncodingException(String.format("Program: %s", e.getMessage()), e, input);
 					}
 					try {
@@ -547,8 +549,8 @@ public class NetworkEpgClient extends EpgClient {
 		String input = req.submitForJson(null);
 		JSONObject resp;
 		try {
-			resp = new JSONObject(input);	
-		} catch(JSONException e) {
+			resp = Config.get().getObjectMapper().readValue(input, JSONObject.class);
+		} catch(JsonParseException e) {
 			throw new JsonEncodingException(String.format("Message(DELETE): %s", e.getMessage()), e, input);
 		}
 		
@@ -574,8 +576,8 @@ public class NetworkEpgClient extends EpgClient {
 		JSONObject resp;
 		String input = req.submitForJson(null);
 		try {
-			resp = new JSONObject(input);	
-		} catch(JSONException e) {
+			resp = Config.get().getObjectMapper().readValue(input, JSONObject.class);
+		} catch(JsonParseException e) {
 			throw new JsonEncodingException(String.format("Lineup(REGISTER): %s", e.getMessage()), e, input);
 		}
 		
@@ -595,8 +597,8 @@ public class NetworkEpgClient extends EpgClient {
 		JSONObject resp;
 		String input = req.submitForJson(null);
 		try {
-			resp = new JSONObject(input);
-		} catch(JSONException e) {
+			resp = Config.get().getObjectMapper().readValue(input, JSONObject.class);
+		} catch(JsonParseException e) {
 			throw new JsonEncodingException(String.format("Lineup(DELETE): %s", e.getMessage()), e, input);
 		}
 		

@@ -82,7 +82,7 @@ public class UserStatus {
 				this.lineupInfo.put(lineupInfo.getString("ID"), fmt.parse(lineupInfo.getString("modified")));
 			}
 			maxLineups = acct.getInt("maxLineups");
-			JSONObject clone = new JSONObject(src.toString());
+			JSONObject clone = Config.get().getObjectMapper().readValue(src.toString(), JSONObject.class);
 			clone.put("userId", this.userId);
 			jsonEncoding = clone.toString(3);
 		} catch(Throwable t) {
