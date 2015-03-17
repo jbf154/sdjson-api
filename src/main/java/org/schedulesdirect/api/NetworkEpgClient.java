@@ -624,4 +624,33 @@ public class NetworkEpgClient extends EpgClient {
 				return l;
 		throw new IOException(String.format("Unable to locate lineup for path: %s", path));
 	}
+	
+	/**
+	 * Get a list of things you can query the service for more info about (i.e. countries supported, etc.)
+	 * <p>
+	 * 	Feed one of the responses into getAvailableThings()
+	 * </p>
+	 * @return A collection of things that can be queried for more info
+	 * @throws IOException In case of any error
+	 */
+	public Collection<String> getAvailableTypes() throws IOException {
+		JsonRequest req = factory.get(Action.GET, RestNouns.AVAILABLE, null, getUserAgent(), getBaseUrl());
+		JSONArray resp = Config.get().getObjectMapper().readValue(req.submitForJson(null), JSONArray.class);
+		Collection<String> things = new ArrayList<>();
+		for(int i = 0; i < resp.length(); ++i)
+			things.add(resp.getString(i));
+		return things;
+	}
+	
+	/**
+	 * Query the server for details about a specific thing
+	 * @param type The type to query about; this type is one of the values returned from getAvailableTypes()
+	 * @return The JSON response received for the query type
+	 * @throws IOException In case of any error
+	 */
+	public String getAvailableThings(String type) throws IOException {
+		String reqParam = type.toLowerCase();
+		JsonRequest req = factory.get(Action.GET, String.format("%s/%s", RestNouns.AVAILABLE, reqParam), null, getUserAgent(), getBaseUrl());
+		return req.submitForJson(null);
+	}
 }
