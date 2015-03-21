@@ -26,7 +26,7 @@ import org.apache.commons.io.IOUtils;
 import org.schedulesdirect.api.NetworkEpgClient;
 import org.schedulesdirect.api.exception.InvalidCredentialsException;
 import org.schedulesdirect.api.exception.ServiceOfflineException;
-import org.schedulesdirect.api.json.JsonRequest;
+import org.schedulesdirect.api.json.DefaultJsonRequest;
 import org.schedulesdirect.api.json.JsonRequestFactory;
 import org.schedulesdirect.test.TestConfig;
 
@@ -48,7 +48,7 @@ public class SampleData {
 			NetworkEpgClient clnt = new NetworkEpgClient(TestConfig.TEST_PROPS.getProperty("SD_USER"), TestConfig.TEST_PROPS.getProperty("SD_PWD"), null, TestConfig.TEST_PROPS.getProperty("SD_URL"), false, JsonRequestFactory.get());
 			target.getParentFile().mkdirs();
 			try(
-				InputStream ins = clnt.submitRequest(JsonRequestFactory.get().get(JsonRequest.Action.GET, String.format("sample/%s%s", type.toString().toLowerCase(), type != SampleType.LINEUPS ? "" : "?type=cable")), null);
+				InputStream ins = clnt.submitRequest(JsonRequestFactory.get().get(DefaultJsonRequest.Action.GET, String.format("sample/%s%s", type.toString().toLowerCase(), type != SampleType.LINEUPS ? "" : "?type=cable")), null);
 				Writer w = new OutputStreamWriter(new FileOutputStream(target), "UTF-8")
 			) {
 				IOUtils.copy(ins, w);

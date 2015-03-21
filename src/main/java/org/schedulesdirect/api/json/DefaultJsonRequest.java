@@ -45,8 +45,8 @@ import org.schedulesdirect.api.utils.HttpUtils;
  * @author Derek Battams &lt;derek@battams.ca&gt;
  *
  */
-public final class JsonRequest {
-	static private final Log LOG = LogFactory.getLog(JsonRequest.class);
+public final class DefaultJsonRequest {
+	static private final Log LOG = LogFactory.getLog(DefaultJsonRequest.class);
 
 	/**
 	 * Defines the supported action types for all requests to the service
@@ -78,7 +78,7 @@ public final class JsonRequest {
 	 * @param userAgent The user agent string to use for the web request to SD
 	 * @param baseUrl The base URL to submit the request to; default used if null
 	 */
-	JsonRequest(Action action, String resource, String hash, String userAgent, String baseUrl) {
+	DefaultJsonRequest(Action action, String resource, String hash, String userAgent, String baseUrl) {
 		this.hash = hash;
 		this.userAgent = userAgent;
 		targetUrl = null;
@@ -98,7 +98,7 @@ public final class JsonRequest {
 	 * @param resource The resource to be accessed for this request
 	 * @param hash The user's hash secret obtained from the SD service
 	 */
-	JsonRequest(Action action, String resource) {
+	DefaultJsonRequest(Action action, String resource) {
 		this(action, resource, null, null, null);
 		valid = false;
 	}

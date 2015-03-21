@@ -37,8 +37,8 @@ import org.schedulesdirect.api.exception.JsonEncodingException;
 import org.schedulesdirect.api.exception.ServiceOfflineException;
 import org.schedulesdirect.api.exception.SilentInvalidJsonObjectException;
 import org.schedulesdirect.api.json.IJsonRequestFactory;
-import org.schedulesdirect.api.json.JsonRequest;
-import org.schedulesdirect.api.json.JsonRequest.Action;
+import org.schedulesdirect.api.json.DefaultJsonRequest;
+import org.schedulesdirect.api.json.DefaultJsonRequest.Action;
 import org.schedulesdirect.api.json.JsonRequestFactory;
 import org.schedulesdirect.api.utils.JsonResponseUtils;
 import org.schedulesdirect.api.utils.UriUtils;
@@ -224,7 +224,7 @@ public class NetworkEpgClient extends EpgClient {
 		creds.put("password", DigestUtils.shaHex(password));
 
 		JSONObject resp;
-		String input = factory.get(JsonRequest.Action.POST, RestNouns.LOGIN_TOKEN, hash, getUserAgent(), getBaseUrl()).submitForJson(creds);
+		String input = factory.get(DefaultJsonRequest.Action.POST, RestNouns.LOGIN_TOKEN, hash, getUserAgent(), getBaseUrl()).submitForJson(creds);
 		try {
 			resp = Config.get().getObjectMapper().readValue(input, JSONObject.class);
 		} catch(JsonParseException e) {
@@ -248,7 +248,7 @@ public class NetworkEpgClient extends EpgClient {
 	 */
 	protected void initStatusObjects() throws IOException {
 		JSONObject resp;
-		String input = factory.get(JsonRequest.Action.GET, RestNouns.STATUS, hash, getUserAgent(), getBaseUrl()).submitForJson(null);
+		String input = factory.get(DefaultJsonRequest.Action.GET, RestNouns.STATUS, hash, getUserAgent(), getBaseUrl()).submitForJson(null);
 		try {
 			resp = Config.get().getObjectMapper().readValue(input, JSONObject.class);
 		} catch(JsonParseException e) {
@@ -277,7 +277,7 @@ public class NetworkEpgClient extends EpgClient {
 	public Lineup[] getLineups() throws IOException {
 		Lineup[] list = null;
 		JSONObject resp;
-		String input = factory.get(JsonRequest.Action.GET, RestNouns.LINEUPS, hash, getUserAgent(), getBaseUrl()).submitForJson(null);
+		String input = factory.get(DefaultJsonRequest.Action.GET, RestNouns.LINEUPS, hash, getUserAgent(), getBaseUrl()).submitForJson(null);
 		try {
 			resp = Config.get().getObjectMapper().readValue(input, JSONObject.class);
 		} catch(JsonParseException e) {
@@ -306,7 +306,7 @@ public class NetworkEpgClient extends EpgClient {
 	protected Lineup[] searchForLineups(final String location, final String zip) throws IOException {
 		List<Lineup> hes = new ArrayList<Lineup>();
 		JSONArray resp;
-		String input = factory.get(JsonRequest.Action.GET, String.format("%s?country=%s&postalcode=%s", RestNouns.HEADENDS, URLEncoder.encode(location, "UTF-8"), URLEncoder.encode(zip, "UTF-8")), hash, getUserAgent(), getBaseUrl()).submitForJson(null);
+		String input = factory.get(DefaultJsonRequest.Action.GET, String.format("%s?country=%s&postalcode=%s", RestNouns.HEADENDS, URLEncoder.encode(location, "UTF-8"), URLEncoder.encode(zip, "UTF-8")), hash, getUserAgent(), getBaseUrl()).submitForJson(null);
 		try {
 			resp = Config.get().getObjectMapper().readValue(input, JSONArray.class);
 		} catch(JsonParseException e) {
@@ -375,8 +375,8 @@ public class NetworkEpgClient extends EpgClient {
 	 * @return An input stream of the result's entity; caller responsible to close stream when done
 	 * @throws IOException On any error
 	 */
-	public InputStream submitRequest(final JsonRequest req, final Object data) throws IOException {
-		JsonRequest scrubbedReq = factory.get(req.getAction(), req.getResource(), getHash(), getUserAgent(), getBaseUrl());
+	public InputStream submitRequest(final DefaultJsonRequest req, final Object data) throws IOException {
+		DefaultJsonRequest scrubbedReq = factory.get(req.getAction(), req.getResource(), getHash(), getUserAgent(), getBaseUrl());
 		return scrubbedReq.submitForInputStream(data);
 	}
 	
@@ -391,7 +391,7 @@ public class NetworkEpgClient extends EpgClient {
 			ids.put(station.getId());
 			JSONObject reqObj = new JSONObject();
 			reqObj.put("request", ids);
-			JsonRequest req = factory.get(Action.POST, RestNouns.SCHEDULES, hash, getUserAgent(), getBaseUrl());
+			DefaultJsonRequest req = factory.get(Action.POST, RestNouns.SCHEDULES, hash, getUserAgent(), getBaseUrl());
 			InputStream ins = req.submitForInputStream(reqObj);
 			@SuppressWarnings("unchecked")
 			List<String> input = IOUtils.readLines(ins);
@@ -455,7 +455,7 @@ public class NetworkEpgClient extends EpgClient {
 		if(misses.size() > 0) {
 			JSONObject reqObj = new JSONObject();
 			reqObj.put("request", misses);
-			try(InputStream resp = factory.get(JsonRequest.Action.POST, RestNouns.SCHEDULES, hash, getUserAgent(), getBaseUrl()).submitForInputStream(reqObj)) {
+			try(InputStream resp = factory.get(DefaultJsonRequest.Action.POST, RestNouns.SCHEDULES, hash, getUserAgent(), getBaseUrl()).submitForInputStream(reqObj)) {
 				for(String input : (List<String>)IOUtils.readLines(resp)) {
 					JSONObject sched;
 					try {
@@ -505,7 +505,7 @@ public class NetworkEpgClient extends EpgClient {
 			JSONObject req = new JSONObject();
 			req.put("request", new JSONArray(misses));
 			
-			try (InputStream resp = factory.get(JsonRequest.Action.POST, RestNouns.PROGRAMS, hash, getUserAgent(), getBaseUrl()).submitForInputStream(req)) {
+			try (InputStream resp = factory.get(DefaultJsonRequest.Action.POST, RestNouns.PROGRAMS, hash, getUserAgent(), getBaseUrl()).submitForInputStream(req)) {
 				for(String input : (List<String>)IOUtils.readLines(resp)) {
 					JSONObject prog;
 					try {
@@ -545,7 +545,7 @@ public class NetworkEpgClient extends EpgClient {
 	
 	@Override
 	public void deleteMessage(final Message msg) throws IOException {
-		JsonRequest req = factory.get(JsonRequest.Action.DELETE, String.format("%s/%s", RestNouns.MESSAGES, msg.getId()), getHash(), getUserAgent(), getBaseUrl());
+		DefaultJsonRequest req = factory.get(DefaultJsonRequest.Action.DELETE, String.format("%s/%s", RestNouns.MESSAGES, msg.getId()), getHash(), getUserAgent(), getBaseUrl());
 		String input = req.submitForJson(null);
 		JSONObject resp;
 		try {
@@ -572,7 +572,7 @@ public class NetworkEpgClient extends EpgClient {
 	
 	@Override
 	public int registerLineup(final String path) throws IOException {
-		JsonRequest req = factory.get(Action.PUT, UriUtils.stripApiVersion(path), getHash(), getUserAgent(), getBaseUrl());
+		DefaultJsonRequest req = factory.get(Action.PUT, UriUtils.stripApiVersion(path), getHash(), getUserAgent(), getBaseUrl());
 		JSONObject resp;
 		String input = req.submitForJson(null);
 		try {
@@ -593,7 +593,7 @@ public class NetworkEpgClient extends EpgClient {
 	
 	@Override
 	public int unregisterLineup(final Lineup l) throws IOException {
-		JsonRequest req = factory.get(Action.DELETE, l.getUri(), getHash(), getUserAgent(), getBaseUrl());
+		DefaultJsonRequest req = factory.get(Action.DELETE, l.getUri(), getHash(), getUserAgent(), getBaseUrl());
 		JSONObject resp;
 		String input = req.submitForJson(null);
 		try {
@@ -634,7 +634,7 @@ public class NetworkEpgClient extends EpgClient {
 	 * @throws IOException In case of any error
 	 */
 	public Collection<String> getAvailableTypes() throws IOException {
-		JsonRequest req = factory.get(Action.GET, RestNouns.AVAILABLE, null, getUserAgent(), getBaseUrl());
+		DefaultJsonRequest req = factory.get(Action.GET, RestNouns.AVAILABLE, null, getUserAgent(), getBaseUrl());
 		JSONArray resp = Config.get().getObjectMapper().readValue(req.submitForJson(null), JSONArray.class);
 		Collection<String> things = new ArrayList<>();
 		for(int i = 0; i < resp.length(); ++i)
@@ -650,7 +650,7 @@ public class NetworkEpgClient extends EpgClient {
 	 */
 	public String getAvailableThings(String type) throws IOException {
 		String reqParam = type.toLowerCase();
-		JsonRequest req = factory.get(Action.GET, String.format("%s/%s", RestNouns.AVAILABLE, reqParam), null, getUserAgent(), getBaseUrl());
+		DefaultJsonRequest req = factory.get(Action.GET, String.format("%s/%s", RestNouns.AVAILABLE, reqParam), null, getUserAgent(), getBaseUrl());
 		return req.submitForJson(null);
 	}
 }

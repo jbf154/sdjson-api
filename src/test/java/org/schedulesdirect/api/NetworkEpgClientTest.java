@@ -36,13 +36,13 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 import org.schedulesdirect.api.exception.InvalidCredentialsException;
 import org.schedulesdirect.api.exception.ServiceOfflineException;
-import org.schedulesdirect.api.json.JsonRequest;
+import org.schedulesdirect.api.json.DefaultJsonRequest;
 import org.schedulesdirect.test.SdjsonTestSuite;
 import org.schedulesdirect.test.api.MockJsonRequestFactory;
 import org.schedulesdirect.test.utils.JsonResponseBuilder;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ JsonRequest.class })
+@PrepareForTest({ DefaultJsonRequest.class })
 public class NetworkEpgClientTest extends SdjsonTestSuite {
 	
 	static private final MockJsonRequestFactory FACTORY = new MockJsonRequestFactory();
@@ -108,7 +108,7 @@ public class NetworkEpgClientTest extends SdjsonTestSuite {
 	@Test
 	public void testInitStatusObjects() throws Exception {
 		FACTORY.addValidTokenResponse();
-		JsonRequest req = mock(JsonRequest.class);
+		DefaultJsonRequest req = mock(DefaultJsonRequest.class);
 		when(req.submitForJson(any(Object.class))).thenReturn(JsonResponseBuilder.buildStatusResponse(null));
 		FACTORY.add(req);
 		NetworkEpgClient c = new NetworkEpgClient("foo", "bar", FACTORY);
@@ -128,7 +128,7 @@ public class NetworkEpgClientTest extends SdjsonTestSuite {
 	@Test
 	public void testGetLineupsSucceeds() throws Exception {
 		FACTORY.addValidTokenResponse();
-		JsonRequest req = mock(JsonRequest.class);
+		DefaultJsonRequest req = mock(DefaultJsonRequest.class);
 		when(req.submitForJson(any(Object.class))).thenReturn(JsonResponseBuilder.buildLineupsResponse());
 		FACTORY.add(req);
 		NetworkEpgClient c = new NetworkEpgClient("foo", "bar", FACTORY);
@@ -148,7 +148,7 @@ public class NetworkEpgClientTest extends SdjsonTestSuite {
 	@Test
 	public void testSearchForLineupsSucceeds() throws Exception {
 		FACTORY.addValidTokenResponse();
-		JsonRequest req = mock(JsonRequest.class);
+		DefaultJsonRequest req = mock(DefaultJsonRequest.class);
 		when(req.submitForJson(any(Object.class))).thenReturn(JsonResponseBuilder.buildSearchResponse());
 		FACTORY.add(req);
 		NetworkEpgClient c = new NetworkEpgClient("foo", "bar", FACTORY);
@@ -160,7 +160,7 @@ public class NetworkEpgClientTest extends SdjsonTestSuite {
 	@Test
 	public void testSearchForLineupsHandlesError() throws Exception {
 		FACTORY.addValidTokenResponse();
-		JsonRequest req = mock(JsonRequest.class);
+		DefaultJsonRequest req = mock(DefaultJsonRequest.class);
 		when(req.submitForJson(any(Object.class))).thenReturn(JsonResponseBuilder.buildErrorResponse());
 		FACTORY.add(req);
 		NetworkEpgClient c = new NetworkEpgClient("foo", "bar", FACTORY);
@@ -172,7 +172,7 @@ public class NetworkEpgClientTest extends SdjsonTestSuite {
 	@Test
 	public void testFetchScheduleSucceeds() throws Exception {
 		FACTORY.addValidTokenResponse();
-		JsonRequest req = mock(JsonRequest.class);
+		DefaultJsonRequest req = mock(DefaultJsonRequest.class);
 		when(req.submitForInputStream(any(Object.class))).thenReturn(new ByteArrayInputStream("".getBytes("UTF-8")));
 		FACTORY.add(req);
 		NetworkEpgClient c = new NetworkEpgClient("foo", "bar", FACTORY);
@@ -184,7 +184,7 @@ public class NetworkEpgClientTest extends SdjsonTestSuite {
 	@Test
 	public void testFetchScheduleFromCache() throws Exception {
 		FACTORY.addValidTokenResponse();
-		JsonRequest req = mock(JsonRequest.class);
+		DefaultJsonRequest req = mock(DefaultJsonRequest.class);
 		FACTORY.add(req);
 		NetworkEpgClient c = new NetworkEpgClient("foo", "bar", FACTORY);
 		Field f = Whitebox.getField(NetworkEpgClient.class, "CACHE");
@@ -198,7 +198,7 @@ public class NetworkEpgClientTest extends SdjsonTestSuite {
 	@Test
 	public void testFetchSchedulesSucceeds() throws Exception {
 		FACTORY.addValidTokenResponse();
-		JsonRequest req = mock(JsonRequest.class);
+		DefaultJsonRequest req = mock(DefaultJsonRequest.class);
 		when(req.submitForInputStream(any(Object.class))).thenReturn(new ByteArrayInputStream("".getBytes("UTF-8")));
 		FACTORY.add(req);
 		
@@ -216,7 +216,7 @@ public class NetworkEpgClientTest extends SdjsonTestSuite {
 	@Test
 	public void testFetchSchedulesFromCache() throws Exception {
 		FACTORY.addValidTokenResponse();
-		JsonRequest req = mock(JsonRequest.class);
+		DefaultJsonRequest req = mock(DefaultJsonRequest.class);
 		FACTORY.add(req);
 		
 		Lineup l = mock(Lineup.class);
@@ -235,7 +235,7 @@ public class NetworkEpgClientTest extends SdjsonTestSuite {
 	@Test
 	public void testFetchProgramsSucceeds() throws Exception {
 		FACTORY.addValidTokenResponse();
-		JsonRequest req = mock(JsonRequest.class);
+		DefaultJsonRequest req = mock(DefaultJsonRequest.class);
 		when(req.submitForInputStream(any(Object.class))).thenReturn(new ByteArrayInputStream("".getBytes("UTF-8")));
 		FACTORY.add(req);
 		
@@ -248,7 +248,7 @@ public class NetworkEpgClientTest extends SdjsonTestSuite {
 	@Test
 	public void testFetchProgramsFromCache() throws Exception {
 		FACTORY.addValidTokenResponse();
-		JsonRequest req = mock(JsonRequest.class);
+		DefaultJsonRequest req = mock(DefaultJsonRequest.class);
 		FACTORY.add(req);
 		
 		NetworkEpgClient c = new NetworkEpgClient("foo", "bar", FACTORY);
@@ -264,7 +264,7 @@ public class NetworkEpgClientTest extends SdjsonTestSuite {
 	@Test
 	public void testFetchProgramsFromCacheAndNetwork() throws Exception {
 		FACTORY.addValidTokenResponse();
-		JsonRequest req = mock(JsonRequest.class);
+		DefaultJsonRequest req = mock(DefaultJsonRequest.class);
 		when(req.submitForInputStream(any(Object.class))).thenReturn(new ByteArrayInputStream("".getBytes("UTF-8")));
 		FACTORY.add(req);
 		
