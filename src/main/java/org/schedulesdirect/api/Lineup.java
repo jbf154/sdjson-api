@@ -32,6 +32,8 @@ import org.schedulesdirect.api.exception.InvalidJsonObjectException;
 import org.schedulesdirect.api.exception.JsonEncodingException;
 import org.schedulesdirect.api.utils.UriUtils;
 
+import com.fasterxml.jackson.core.JsonParseException;
+
 /**
  * A Lineup represents a single television lineup available in a Headend
  * 
@@ -115,7 +117,7 @@ public class Lineup {
 			physicalStationMap = new HashMap<String, List<String>>();
 			String input = epgClnt.fetchChannelMapping(this);;
 			try {
-				JSONObject resp = new JSONObject(input);
+				JSONObject resp = Config.get().getObjectMapper().readValue(input, JSONObject.class);
 				channelMap = resp.getJSONArray("map");
 				Map<String, JSONObject> tuningData = getTuningData(resp.getJSONArray("map"));
 				fillStations(resp.getJSONArray("stations"), tuningData);
@@ -124,7 +126,7 @@ public class Lineup {
 					buildChannelMapViaAtscData();
 				else
 					buildChannelMapViaJsonData();
-			} catch(JSONException e) {
+			} catch(JsonParseException e) {
 				throw new JsonEncodingException(String.format("Lineup[%s]: %s", id, e.getMessage()), e, input);
 			} catch(ParseException e) {
 				throw new InvalidJsonObjectException(String.format("Lineup[%s]: %s", id, e.getMessage()), e, input);

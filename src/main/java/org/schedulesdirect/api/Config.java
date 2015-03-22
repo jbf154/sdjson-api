@@ -25,6 +25,9 @@ import java.util.TimeZone;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsonorg.JsonOrgModule;
+
 /**
  * Provides various configuration options to the API.
  * 
@@ -71,11 +74,20 @@ public final class Config {
 	}
 	
 	private String dateTimeFmt;
+	private ObjectMapper mapper;
 	
 	private Config() {
 		dateTimeFmt = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+		mapper = new ObjectMapper();
+		mapper.registerModule(new JsonOrgModule());
 	}
 
+	/**
+	 * Return the ObjectMapper configured for this app
+	 * @return A properly configured ObjectMapper
+	 */
+	public ObjectMapper getObjectMapper() { return mapper; }
+	
 	/**
 	 * Return the expected format string for all date/time values in the upstream JSON
 	 * @return The format string suitable for use in SimpleDateFormat constructor

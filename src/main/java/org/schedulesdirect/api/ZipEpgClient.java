@@ -46,6 +46,8 @@ import org.schedulesdirect.api.exception.InvalidJsonObjectException;
 import org.schedulesdirect.api.exception.JsonEncodingException;
 import org.schedulesdirect.api.utils.UriUtils;
 
+import com.fasterxml.jackson.core.JsonParseException;
+
 /**
  * An implementation of EpgClient that uses a local zip file as its data source
  * 
@@ -76,7 +78,7 @@ public class ZipEpgClient extends EpgClient {
 	/**
 	 * The zip file version this grabber generates
 	 */
-	static public final int ZIP_VER = 8;
+	static public final int ZIP_VER = 9;
 	/**
 	 * The default charset encoding used for all data in the generated zip file
 	 */
@@ -162,8 +164,8 @@ public class ZipEpgClient extends EpgClient {
 				String input = IOUtils.toString(ins, ZIP_CHARSET.toString());
 				JSONObject o;
 				try {
-					o = new JSONObject(input);
-				} catch(JSONException e) {
+					o = Config.get().getObjectMapper().readValue(input, JSONObject.class);
+				} catch(JsonParseException e) {
 					throw new JsonEncodingException(String.format("ZipLineups: %s", e.getMessage()), e, input);
 				}
 				try {
@@ -217,8 +219,8 @@ public class ZipEpgClient extends EpgClient {
 		String input = null;
 		try(InputStream ins = Files.newInputStream(vfs.getPath(USER_DATA))) {
 			input = IOUtils.toString(ins, ZIP_CHARSET.toString());
-			return new UserStatus(new JSONObject(input), null, this);
-		} catch (JSONException e) {
+			return new UserStatus(Config.get().getObjectMapper().readValue(input, JSONObject.class), null, this);
+		} catch (JsonParseException e) {
 			throw new JsonEncodingException(String.format("ZipUser: %s", e.getMessage()), e, input);
 		}
 	}
@@ -258,8 +260,8 @@ public class ZipEpgClient extends EpgClient {
 			try(InputStream ins = Files.newInputStream(path)) {
 				input = IOUtils.toString(ins, ZIP_CHARSET.toString());
 				try {
-					o = new JSONObject(input);
-				} catch(JSONException e) {
+					o = Config.get().getObjectMapper().readValue(input, JSONObject.class);
+				} catch(JsonParseException e) {
 					throw new JsonEncodingException(String.format("Schedule[%s]: %s", station.getId(), e.getMessage()), e, input);
 				}
 				JSONArray jarr = o.getJSONArray("programs");
@@ -290,8 +292,8 @@ public class ZipEpgClient extends EpgClient {
 					if(data != null) {
 						JSONObject obj;
 						try {
-							obj = new JSONObject(data);
-						} catch(JSONException e) {
+							obj = Config.get().getObjectMapper().readValue(data, JSONObject.class);
+						} catch(JsonParseException e) {
 							throw new JsonEncodingException(String.format("ZipProgram[%s]: %s", progId, e.getMessage()), e, data);
 						}
 						String cachedMd5 = obj.optString("md5", "");
@@ -414,8 +416,8 @@ public class ZipEpgClient extends EpgClient {
 			String input = IOUtils.toString(ins, ZIP_CHARSET.toString());
 			JSONObject user;
 			try {
-				user = new JSONObject(input);
-			} catch(JSONException e) {
+				user = Config.get().getObjectMapper().readValue(input, JSONObject.class);
+			} catch(JsonParseException e) {
 				throw new JsonEncodingException(String.format("ZipSysStatus: %s", e.getMessage()), e, input);
 			}
 			return new SystemStatus(user.getJSONArray("systemStatus"));
@@ -467,8 +469,8 @@ public class ZipEpgClient extends EpgClient {
 		try(InputStream ins = Files.newInputStream(vfs.getPath("maps", ZipEpgClient.scrubFileName(String.format("%s.txt", lineup.getId()))))) {
 			String input = IOUtils.toString(ins, ZipEpgClient.ZIP_CHARSET.toString());
 			try {
-				return new JSONObject(input).toString();
-			} catch(JSONException e) {
+				return Config.get().getObjectMapper().readValue(input, JSONObject.class).toString();
+			} catch(JsonParseException e) {
 				throw new JsonEncodingException(String.format("ZipLineupMap: %s", e.getMessage()), e, input);
 			}
 		}

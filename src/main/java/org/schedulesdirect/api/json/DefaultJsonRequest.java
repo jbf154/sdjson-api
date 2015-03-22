@@ -45,8 +45,8 @@ import org.schedulesdirect.api.utils.HttpUtils;
  * @author Derek Battams &lt;derek@battams.ca&gt;
  *
  */
-public final class JsonRequest {
-	static private final Log LOG = LogFactory.getLog(JsonRequest.class);
+public final class DefaultJsonRequest {
+	static private final Log LOG = LogFactory.getLog(DefaultJsonRequest.class);
 
 	/**
 	 * Defines the supported action types for all requests to the service
@@ -78,7 +78,7 @@ public final class JsonRequest {
 	 * @param userAgent The user agent string to use for the web request to SD
 	 * @param baseUrl The base URL to submit the request to; default used if null
 	 */
-	JsonRequest(Action action, String resource, String hash, String userAgent, String baseUrl) {
+	DefaultJsonRequest(Action action, String resource, String hash, String userAgent, String baseUrl) {
 		this.hash = hash;
 		this.userAgent = userAgent;
 		targetUrl = null;
@@ -98,7 +98,7 @@ public final class JsonRequest {
 	 * @param resource The resource to be accessed for this request
 	 * @param hash The user's hash secret obtained from the SD service
 	 */
-	JsonRequest(Action action, String resource) {
+	DefaultJsonRequest(Action action, String resource) {
 		this(action, resource, null, null, null);
 		valid = false;
 	}
@@ -129,7 +129,7 @@ public final class JsonRequest {
 	 * @return The JSON encoded response received from the SD service
 	 * @throws IOException Thrown on any IO error encountered
 	 */
-	public String submitForJson(Object reqData, boolean ignoreContentType) throws IOException {
+	public String submitForJson(Object reqData) throws IOException {
 		String str = null;
 		boolean throwIt = false;
 		HttpResponse resp = submitRaw(reqData);
@@ -138,7 +138,7 @@ public final class JsonRequest {
 			throwIt = true;
 		try(InputStream ins = resp.getEntity().getContent()) {
 			str = IOUtils.toString(ins, "UTF-8");
-			if(throwIt && !ignoreContentType)
+			if(throwIt)
 				throw new JsonEncodingException("Request did not return expected content type!", str);
 			return str;
 		} finally {
@@ -152,17 +152,7 @@ public final class JsonRequest {
 			HttpUtils.captureToDisk(audit.toString());
 		}
 	}
-
-	/**
-	 * Submit this request; returns the JSON object response received; only call if the request is expected to return a JSON object in response
-	 * @param reqData The supporting data for the request; this is dependent on the action and obj target specified
-	 * @return The JSON encoded response received from the SD service
-	 * @throws IOException Thrown on any IO error encountered
-	 */
-	public String submitForJson(Object reqData) throws IOException {
-		return submitForJson(reqData, false);
-	}
-
+	
 	/**
 	 * Submit this request; returns the raw input stream of the content; caller responsible for closing stream when done.
 	 * @param reqData The supporting data for the request; this is dependent on the action and obj target specified

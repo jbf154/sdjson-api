@@ -16,7 +16,7 @@
 package org.schedulesdirect.api.json;
 
 import org.junit.Test;
-import org.schedulesdirect.api.json.JsonRequest.Action;
+import org.schedulesdirect.api.json.DefaultJsonRequest.Action;
 import org.schedulesdirect.test.SdjsonTestSuite;
 
 public class JsonRequestTest extends SdjsonTestSuite {

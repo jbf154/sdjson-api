@@ -31,7 +31,7 @@ public interface IJsonRequestFactory {
 	 * @param baseUrl The service base URL
 	 * @return The constructed JsonRequest, ready to be executed
 	 */
-	public JsonRequest get(JsonRequest.Action action, String resource, String hash, String userAgent, String baseUrl);
+	public DefaultJsonRequest get(DefaultJsonRequest.Action action, String resource, String hash, String userAgent, String baseUrl);
 	
 	/**
 	 * Construct a partial JsonRequest that CANNOT be executed; used as skeleton for a clone construction
@@ -39,7 +39,7 @@ public interface IJsonRequestFactory {
 	 * @param resource The resource to execute against
 	 * @return The partial JsonRequest object; use this object as the basis for constructing a full one
 	 */
-	public JsonRequest get(JsonRequest.Action action, String resource);
+	public DefaultJsonRequest get(DefaultJsonRequest.Action action, String resource);
 	
 	/**
 	 * Construct a JSON request from a complete URL; the request is partial and cannot be immediately executed
@@ -47,5 +47,5 @@ public interface IJsonRequestFactory {
 	 * @param url The URL to build the request from
 	 * @return The partial JsonRequest; suitable for constructing a full, executable request
 	 */
-	public JsonRequest get(JsonRequest.Action action, URL url);
+	public DefaultJsonRequest get(DefaultJsonRequest.Action action, URL url);
 }

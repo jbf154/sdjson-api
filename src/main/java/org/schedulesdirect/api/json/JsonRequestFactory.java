@@ -17,7 +17,7 @@ package org.schedulesdirect.api.json;
 
 import java.net.URL;
 
-import org.schedulesdirect.api.json.JsonRequest.Action;
+import org.schedulesdirect.api.json.DefaultJsonRequest.Action;
 
 /**
  * Constructs requests that function against the given web serivce URL
@@ -29,18 +29,18 @@ public class JsonRequestFactory implements IJsonRequestFactory {
 	static public JsonRequestFactory get() { return INSTANCE; }
 
 	@Override
-	public JsonRequest get(JsonRequest.Action action, String resource, String hash, String userAgent, String baseUrl) {
-		return new JsonRequest(action, resource, hash, userAgent, baseUrl);
+	public DefaultJsonRequest get(DefaultJsonRequest.Action action, String resource, String hash, String userAgent, String baseUrl) {
+		return new DefaultJsonRequest(action, resource, hash, userAgent, baseUrl);
 	}
 	
 	@Override
-	public JsonRequest get(JsonRequest.Action action, String resource) {
-		return new JsonRequest(action, resource);
+	public DefaultJsonRequest get(DefaultJsonRequest.Action action, String resource) {
+		return new DefaultJsonRequest(action, resource);
 	}
 
 	@Override
-	public JsonRequest get(Action action, URL url) {
+	public DefaultJsonRequest get(Action action, URL url) {
 		String[] data = url.getPath().substring(1).split("\\/", 2);
-		return new JsonRequest(action, data[1]);
+		return new DefaultJsonRequest(action, data[1]);
 	}
 }
