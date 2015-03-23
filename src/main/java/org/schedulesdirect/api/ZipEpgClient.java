@@ -78,7 +78,7 @@ public class ZipEpgClient extends EpgClient {
 	/**
 	 * The zip file version this grabber generates
 	 */
-	static public final int ZIP_VER = 9;
+	static public final int ZIP_VER = 10;
 	/**
 	 * The default charset encoding used for all data in the generated zip file
 	 */
@@ -172,7 +172,7 @@ public class ZipEpgClient extends EpgClient {
 					JSONArray lineups = o.getJSONArray("lineups");
 					for(int i = 0; i < lineups.length(); ++i) {
 						JSONObject l = lineups.getJSONObject(i);
-						this.lineups.put(l.getString("uri"), new Lineup(l.getString("name"), l.getString("location"), l.getString("uri"), l.getString("type"), this));
+						this.lineups.put(l.getString("uri"), new Lineup(l.getString("name"), l.getString("location"), l.getString("uri"), l.getString("transport"), this));
 					}
 				} catch(JSONException e) {
 					throw new InvalidJsonObjectException(String.format("ZipLineups: %s", e.getMessage()), e, o.toString(3));

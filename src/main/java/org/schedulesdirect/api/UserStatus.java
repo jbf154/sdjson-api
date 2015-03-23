@@ -79,7 +79,7 @@ public class UserStatus {
 			msgs = src.getJSONArray("lineups");
 			for(int i = 0; i < msgs.length(); ++i) {
 				JSONObject lineupInfo = msgs.getJSONObject(i);
-				this.lineupInfo.put(lineupInfo.getString("ID"), fmt.parse(lineupInfo.getString("modified")));
+				this.lineupInfo.put(lineupInfo.getString("lineup"), fmt.parse(lineupInfo.getString("modified")));
 			}
 			maxLineups = acct.getInt("maxLineups");
 			JSONObject clone = Config.get().getObjectMapper().readValue(src.toString(), JSONObject.class);
