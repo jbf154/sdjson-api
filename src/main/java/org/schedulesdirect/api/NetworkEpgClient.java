@@ -290,7 +290,7 @@ public class NetworkEpgClient extends EpgClient {
 				list = new Lineup[lineups.length()];
 				for(int i = 0; i < lineups.length(); ++i) {
 					JSONObject lineup = lineups.getJSONObject(i);
-					list[i] = new Lineup(lineup.getString("name"), lineup.getString("location"), lineup.getString("uri"), lineup.getString("type"), this);
+					list[i] = new Lineup(lineup.getString("name"), lineup.getString("location"), lineup.getString("uri"), lineup.getString("transport"), this);
 				}
 			} catch(JSONException e) {
 				throw new InvalidJsonObjectException(String.format("Lineups[%s]: %s", id, e.getMessage()), e, resp.toString(3));
@@ -317,7 +317,7 @@ public class NetworkEpgClient extends EpgClient {
 			for(int j = 0; j < resp.length(); ++j) {
 				JSONObject headend = resp.getJSONObject(j);
 				String heLoc = headend.getString("location");
-				String heType = headend.getString("type");
+				String heType = headend.getString("transport");
 				JSONArray lineups = headend.getJSONArray("lineups");
 				for(int i = 0; i < lineups.length(); ++i) {
 					JSONObject lineup = lineups.getJSONObject(i);

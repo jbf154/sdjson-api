@@ -53,7 +53,7 @@ public class Lineup {
 	private Date lastModified;
 	private String location;
 	private String uri;
-	private String type;
+	private String transport;
 	private JSONArray channelMap;
 	private Map<String, List<String>> stationMap;
 	private Map<String, List<String>> physicalStationMap;
@@ -68,9 +68,10 @@ public class Lineup {
 	 * @param name The name of the lineup; e.g. Shaw Direct Satellite
 	 * @param location The location of the lineup; e.g. Madison, WI
 	 * @param uri The URI where the remaining details of this lineup can be found
+	 * @param transport The type of lineup this is (satellite, cable, etc.)
 	 * @param clnt The EpgClient instance this object is to be attached to
 	 */
-	Lineup(final String name, final String location, final String uri, final String type, final EpgClient clnt) {
+	Lineup(final String name, final String location, final String uri, final String transport, final EpgClient clnt) {
 		this.stationMap = null;
 		this.physicalStationMap = null;
 		this.stations = null;
@@ -78,7 +79,7 @@ public class Lineup {
 		this.uri = UriUtils.stripApiVersion(uri);
 		this.name = name;
 		this.location = location;
-		this.type = type;
+		this.transport = transport;
 		channelMap = null;
 		id = this.uri.substring(this.uri.lastIndexOf('/') + 1);
 		detailsFetched = false;
@@ -302,8 +303,8 @@ public class Lineup {
 				+ location
 				+ ", uri="
 				+ uri
-				+ ", type="
-				+ type
+				+ ", transport="
+				+ transport
 				+ ", channelMap="
 				+ channelMap
 				+ ", stationMap="
@@ -335,8 +336,8 @@ public class Lineup {
 	/**
 	 * @return the type
 	 */
-	public String getType() {
-		return type;
+	public String getTransport() {
+		return transport;
 	}
 
 	/**

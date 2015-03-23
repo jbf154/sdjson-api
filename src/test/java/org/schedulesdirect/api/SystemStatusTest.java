@@ -32,12 +32,12 @@ public class SystemStatusTest extends SdjsonTestSuite {
 		JSONArray a = new JSONArray();
 		JSONObject o = new JSONObject();
 		o.put("status", "foo");
-		o.put("details", "foo");
+		o.put("message", "foo");
 		o.put("date", Config.get().getDateTimeFormat().format(new Date(0)));
 		a.put(o);
 		o = new JSONObject();
 		o.put("status", "bar");
-		o.put("details", "bar");
+		o.put("message", "bar");
 		o.put("date", Config.get().getDateTimeFormat().format(new Date()));
 		a.put(o);
 		SystemStatus s = new SystemStatus(a);
