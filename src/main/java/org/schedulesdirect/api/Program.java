@@ -1,5 +1,5 @@
 /*
- *      Copyright 2012-2014 Battams, Derek
+ *      Copyright 2012-2015 Battams, Derek
  *       
  *       Licensed under the Apache License, Version 2.0 (the "License");
  *       you may not use this file except in compliance with the License.
@@ -597,7 +597,7 @@ public class Program {
 				JSONArray ratings = movieInfo.getJSONArray("qualityRating");
 				for(int i = 0; i < ratings.length(); ++i) {
 					JSONObject r = ratings.getJSONObject(i);
-					if("TMS".equals(r.optString("ratingsBody")))
+					if("Gracenote".equals(r.optString("ratingsBody")))
 						ratingObjs.add(new FloatQualityRating(r, "stars"));
 					else
 						ratingObjs.add(new StringQualityRating(r, "rating"));
