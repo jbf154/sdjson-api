@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -987,8 +988,7 @@ public class Program {
 				+ ", alternateTitle="
 				+ alternateTitle
 				+ ", credits="
-				+ (credits != null ? Arrays.asList(credits).subList(0,
-						Math.min(credits.size(), maxLen)) : null)
+				+ (credits != null ? toString(credits, maxLen) : null)
 				+ ", alternateDescription="
 				+ alternateDescription
 				+ ", alternateDescriptionShort="
@@ -1027,8 +1027,7 @@ public class Program {
 				+ (genres != null ? Arrays.asList(genres).subList(0,
 						Math.min(genres.length, maxLen)) : null)
 				+ ", metadata="
-				+ (metadata != null ? metadata.subList(0,
-						Math.min(metadata.size(), maxLen)) : null)
+				+ (metadata != null ? toString(metadata, maxLen) : null)
 				+ ", seriesDescription="
 				+ seriesDescription
 				+ ", venue="
@@ -1374,5 +1373,19 @@ public class Program {
 	 */
 	public void setSeriesInfo(Program seriesInfo) {
 		this.seriesInfo = seriesInfo;
+	}
+
+	private String toString(Collection<?> collection, int maxLen) {
+		StringBuilder builder = new StringBuilder();
+		builder.append("[");
+		int i = 0;
+		for (Iterator<?> iterator = collection.iterator(); iterator.hasNext()
+				&& i < maxLen; i++) {
+			if (i > 0)
+				builder.append(", ");
+			builder.append(iterator.next());
+		}
+		builder.append("]");
+		return builder.toString();
 	}
 }
