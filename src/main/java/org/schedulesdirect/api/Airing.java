@@ -72,7 +72,17 @@ public class Airing {
 		/**
 		 * An unknown value was provided for Dolby status; report the unknown value as a bug ticket for future inclusion
 		 */
-		UNKNOWN
+		UNKNOWN;
+		
+		public static DolbyStatus fromValue(String val) {
+			switch(val.toLowerCase().replaceAll("\\W", "")) {
+				case "dd": return DD;
+				case "dd51": return DD51;
+				case "dolby": return DOLBY;
+			}
+			
+			return UNKNOWN;
+		}
 	}
 	
 	/**
@@ -251,14 +261,10 @@ public class Airing {
 						case "stereo": stereo = true; break;
 						case "dvs": descriptiveVideo = true; break;
 						case "subtitled": subtitled = true; break;
+						case "SAP": sap = true; break;
 						default:
 							if(val.startsWith("D")) { // This is a Dolby marker
-								try {
-									dolbyStatus = DolbyStatus.valueOf(val.replaceAll(" ", "").replaceAll("\\.", ""));
-								} catch(IllegalArgumentException e) {
-									LOG.warn(String.format("Unknown DolbyStatus encountered! [%s]", val));
-									dolbyStatus = DolbyStatus.UNKNOWN;
-								}								
+								dolbyStatus = DolbyStatus.fromValue(val);
 							} else
 								LOG.warn(String.format("Unknown audio property encountered! [%s]", val));
 					}
@@ -267,9 +273,9 @@ public class Airing {
 			timeApproximate = src.optBoolean("timeApproximate");
 			if(subtitled && src.has("subtitledLanguage"))
 				subtitleLanguage = src.getString("subtitledLanguage");
-			sap = src.optBoolean("sap");
+			/*sap = src.optBoolean("sap");
 			if(sap && src.has("sapLanguage"))
-				sapLanguage = src.getString("sapLanguage");
+				sapLanguage = src.getString("sapLanguage");*/
 			cableInTheClassroom = src.optBoolean("cableInTheClassroom");
 			subjectToBlackout = src.optBoolean("subjectToBlackout");
 			educational = src.optBoolean("educational");
@@ -703,7 +709,7 @@ public class Airing {
 	}
 
 	/**
-	 * @param tvRating the tvRating to set
+	 * @param tvRatings the tvRatings to set
 	 */
 	public void setTvRatings(ContentRating[] tvRatings) {
 		this.tvRatings = tvRatings;

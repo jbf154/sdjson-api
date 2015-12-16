@@ -119,7 +119,7 @@ public class NetworkEpgClient extends EpgClient {
 	}
 
 	/**
-	 * ctor; typically only used for development & testing; allows overriding of JsonRequestFactory instance 
+	 * ctor; typically only used for development &amp; testing; allows overriding of JsonRequestFactory instance 
 	 * @param id
 	 * @param pwd
 	 * @param factory
@@ -145,7 +145,7 @@ public class NetworkEpgClient extends EpgClient {
 	}
 
 	/**
-	 * ctor; typically only used for development & testing; allows overriding of JsonRequestFactory instance
+	 * ctor; typically only used for development &amp; testing; allows overriding of JsonRequestFactory instance
 	 * @param id
 	 * @param pwd
 	 * @param userAgent
@@ -165,7 +165,6 @@ public class NetworkEpgClient extends EpgClient {
 	 * @param userAgent The user agent to send on all requests to the SD servers
 	 * @param baseUrl The base URL to use for all HTTP communication; most should not set this value as it is for testing and development only!
 	 * @param useCache Should the client instance maintain a cache of created objects or hit the SD server on every request?  Though memory intensive, use of the cache is greatly encouraged!
-	 * @param factory The JsonRequestFactory to be used for this client to generate network requests
 	 * @throws InvalidCredentialsException Thrown if the given credentials were invalid
 	 * @throws IOException Thrown if there is any IO error communicating with the Schedules Direct servers	 
 	 * @throws ServiceOfflineException Thrown if the web service reports itself as offline/unavailable
@@ -422,6 +421,12 @@ public class NetworkEpgClient extends EpgClient {
 	@Override
 	protected Program fetchProgram(final String progId) throws IOException {
 		return fetchPrograms(new String[] { progId }).values().toArray(new Program[1])[0];
+	}
+	
+	@Override
+	protected Artwork[] fetchArtwork(String progId) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	private void prefetch(JSONArray airings) throws IOException {

@@ -25,6 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -87,11 +88,11 @@ public class Program {
 		 */
 		COLOR,
 		/**
-		 * The program is in Black & White
+		 * The program is in Black &amp; White
 		 */
 		BW,
 		/**
-		 * The program is in both color and Black & White
+		 * The program is in both color and Black &amp; White
 		 */
 		COLOR_AND_BW,
 		/**
@@ -164,6 +165,22 @@ public class Program {
 		PRODUCTION_MANAGER,
 		DIRECTORY_OF_PHOTOGRAPHY,
 		VISUAL_EFFECTS
+	}
+	
+	/**
+	 * Represents the entity type that is program represents
+	 * @author Ben Fisler
+	 *
+	 */
+	static public enum EntityType {
+		/**
+		 * An unknown value was provided; provide the value in a bug ticket for future inclusion
+		 */
+		UNKNOWN,
+		Show,
+		Episode,
+		Sports,
+		Movie
 	}
 	
 	/**
@@ -546,7 +563,11 @@ public class Program {
 	private String venue;
 	private Team[] teams;
 	private URL[] images;
+	private EntityType entityType;
+	private Map<String, List<String>> keywords;
+	private Artwork[] artworks;
 	private Program seriesInfo;
+	
 	
 	/**
 	 * Consutrctor
@@ -687,6 +708,8 @@ public class Program {
 			String orig = src.optString("originalAirDate", "");
 			originalAirDate = orig.length() > 0 && !orig.startsWith("0") ? getOrigAirDateFormat().parse(src.getString("originalAirDate")) : null;
 			descriptionLanguage = descs != null ? src.optString("descriptionLanguage", null) : null;
+			String entityTypeStr = src.optString("entityType");
+			entityType = entityTypeStr.length() == 0 ? EntityType.UNKNOWN : EntityType.valueOf(entityTypeStr);
 			String srcType = src.optString("sourceType").toUpperCase();
 			try {
 				sourceType = srcType.length() == 0 ? SourceType.NONE : SourceType.valueOf(srcType);
@@ -745,10 +768,44 @@ public class Program {
 				}
 				this.images = urls.toArray(new URL[0]);
 			}
-			seriesInfo = id.startsWith("EP") ? clnt.fetchProgram(convertToSeriesId(id)) : null;
+			
+			this.keywords = new LinkedHashMap<>();
+			JSONObject keyWords = src.optJSONObject("keyWords");
+			if(keyWords != null) {
+				Iterator<String> keyWordGroupNamesIt = keyWords.keys();
+				while(keyWordGroupNamesIt.hasNext() == true) {
+					String keyWordGroupName = keyWordGroupNamesIt.next();
+					JSONArray keywords = keyWords.optJSONArray(keyWordGroupName);
+					List<String> keywordGroup = this.keywords.get(keyWordGroupName);
+					if(keywordGroup == null) {
+						keywordGroup = new ArrayList<>();
+						this.keywords.put(keyWordGroupName, keywordGroup);
+					}
+					
+					if(keywords != null) {
+						for(int i=0; i < keywords.length(); ++i) {
+							String keyword = keywords.getString(i);
+							keywordGroup.add(keyword);
+						}
+					}
+				}
+			}
+			
+			if(src.optBoolean("hasImageArtwork") == true) {
+				artworks = clnt.fetchArtwork(id);
+			}
+			else {
+				artworks = new Artwork[0];
+			}
+			
+			seriesInfo = (entityType == EntityType.Episode) ? clnt.fetchProgram(convertToSeriesId(id)) : null;
 		} catch (Throwable t) {
 			throw new InvalidJsonObjectException(String.format("Program[%s]: %s", id, t.getMessage()), t, src.toString(3));
 		}
+	}
+	
+	public void populateImages(JSONArray data) {
+		
 	}
 	
 	/**
@@ -1184,7 +1241,7 @@ public class Program {
 	}
 
 	/**
-	 * @param mpaaRating the mpaaRating to set
+	 * @param ratings the ratings to set
 	 */
 	public void setRatings(ContentRating[] ratings) {
 		this.ratings = ratings;
@@ -1387,5 +1444,41 @@ public class Program {
 		}
 		builder.append("]");
 		return builder.toString();
+	}
+	
+	/**
+	 * @return the entityType
+	 */
+	public EntityType getEntityType() {
+		return entityType;
+	}
+	
+	/**
+	 * @param entityType the entityType to set
+	 */
+	public void setEntityType(EntityType entityType) {
+		this.entityType = entityType;
+	}
+	
+	/**
+	 * @return the keywords
+	 */
+	public Map<String, List<String>> getKeywords() {
+		return keywords;
+	}
+	
+	/**
+	 * @param keywords the keywords to set
+	 */
+	public void setKeywords(Map<String, List<String>> keywords) {
+		this.keywords = keywords;
+	}
+	
+	public Artwork[] getArtworks() {
+		return artworks;
+	}
+	
+	public void setArtworks(Artwork[] artworks) {
+		this.artworks = artworks;
 	}
 }

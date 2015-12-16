@@ -51,7 +51,7 @@ public abstract class EpgClient {
 	/**
 	 * Constructor
 	 * @param userAgent The user agent to pass along to all SD HTTP requests
-	 * @param baseUri The base URI to use when constructing URIs/URLs based on relative data in the raw JSON
+	 * @param baseUrl The base URI to use when constructing URIs/URLs based on relative data in the raw JSON
 	 */
 	public EpgClient(final String userAgent, final String baseUrl) {
 		this.userAgent = userAgent;
@@ -64,7 +64,6 @@ public abstract class EpgClient {
  	 * @param location The 3 letter ISO country code; must be a country supported by the service (USA, CAN, etc.)
 	 * @param zip The zip/postal code to find headends for
 	 * @return An array of Lineup objects representing all available Lineups for the given zip; never returns null, but may return an empty array
-	 * @throws InvalidZipCodeException Thrown if the given zip/postal code is invalid
 	 * @throws IOException Thrown if there is any kind of IO error accessing the raw data feed
 	 */
 	public final Lineup[] getLineups(final String location, final String zip) throws IOException {
@@ -182,6 +181,14 @@ public abstract class EpgClient {
 	abstract protected Program fetchProgram(final String progId) throws IOException;
 	
 	/**
+	 * Fetch a single Artwork object
+	 * @param progId The program id to fetch artwork for
+	 * @return The Artwork instance for the given program id or null if unavailable
+	 * @throws IOException Thrown on any IO error accessing the data
+	 */
+	abstract protected Artwork[] fetchArtwork(final String progId) throws IOException;
+	
+	/**
 	 * Fetch multiple recording schedules in batch.
 	 * 
 	 * <p>
@@ -263,7 +270,7 @@ public abstract class EpgClient {
 	}
 
 	/**
-	 * @param baseUri the baseUrl to set
+	 * @param baseUrl the baseUrl to set
 	 */
 	public void setBaseUri(String baseUrl) {
 		this.baseUrl = baseUrl;

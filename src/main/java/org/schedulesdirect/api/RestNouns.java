@@ -31,6 +31,7 @@ public final class RestNouns {
 	static public final String SCHEDULE_MD5S = SCHEDULES + "/md5";
 	static public final String MESSAGES = "messages";
 	static public final String AVAILABLE = "available";
+	static public final String METADATA = "metadata" + "/" + PROGRAMS;
 	
 	private RestNouns() {}
 }

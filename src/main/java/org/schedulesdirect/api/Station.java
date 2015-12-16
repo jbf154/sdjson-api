@@ -80,13 +80,13 @@ public class Station {
 		/**
 		 * @return the url
 		 */
-		URL getUrl() {
+		public URL getUrl() {
 			return url;
 		}
 		/**
 		 * @param url the url to set
 		 */
-		void setUrl(URL url) {
+		public void setUrl(URL url) {
 			this.url = url;
 		}
 		/**

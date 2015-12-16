@@ -125,7 +125,6 @@ public final class DefaultJsonRequest {
 	/**
 	 * Submit this request; returns the JSON object response received; only call if the request is expected to return a JSON object in response
 	 * @param reqData The supporting data for the request; this is dependent on the action and obj target specified
-	 * @param ignoreContentType When true, the content type of the response is ignored (handles buggy SD server response for some request types)
 	 * @return The JSON encoded response received from the SD service
 	 * @throws IOException Thrown on any IO error encountered
 	 */
@@ -167,7 +166,7 @@ public final class DefaultJsonRequest {
 	/**
 	 * Submit this request; returns the raw input stream of the content; caller responsible for closing stream when done.
 	 * @param reqData The supporting data for the request; this is dependent on the action and obj target specified
-	 * @param failOnStatusError If true and the status code of the HTTP request > 399 then throw an exception; if false just return the entity stream regardless
+	 * @param failOnStatusError If true and the status code of the HTTP request &gt; 399 then throw an exception; if false just return the entity stream regardless
 	 * @return The InputStream of data received in response to the request
 	 * @throws IOException Thrown on any IO error encountered
 	 * @throws IllegalStateException Thrown if called on a partially constructed object (the 2 arg ctor)
