@@ -177,10 +177,27 @@ public class Program {
 		 * An unknown value was provided; provide the value in a bug ticket for future inclusion
 		 */
 		UNKNOWN,
-		Show,
-		Episode,
-		Sports,
-		Movie
+		SHOW,
+		EPISODE,
+		SPORTS,
+		MOVIE;
+		
+		public static EntityType fromValue(String value) {
+			if(value != null) {
+				switch(value) {
+					case "Show":
+						return SHOW;
+					case "Episode":
+						return EPISODE;
+					case "Sports":
+						return SPORTS;
+					case "Movie":
+						return MOVIE;
+				}
+			}
+			
+			return UNKNOWN;
+		}
 	}
 	
 	/**
@@ -798,14 +815,10 @@ public class Program {
 				artworks = new Artwork[0];
 			}
 			
-			seriesInfo = (entityType == EntityType.Episode) ? clnt.fetchProgram(convertToSeriesId(id)) : null;
+			seriesInfo = (entityType == EntityType.EPISODE) ? clnt.fetchProgram(convertToSeriesId(id)) : null;
 		} catch (Throwable t) {
 			throw new InvalidJsonObjectException(String.format("Program[%s]: %s", id, t.getMessage()), t, src.toString(3));
 		}
-	}
-	
-	public void populateImages(JSONArray data) {
-		
 	}
 	
 	/**

@@ -303,16 +303,15 @@ public class ZipEpgClient extends EpgClient {
 		if(p == null) {
 			Path path = vfs.getPath(String.format("programs/%s.txt", scrubFileName(progId)));
 			
-			if(!Files.exists(path)) {
+			if(!Files.exists(path) && progId.startsWith("SH")) {
 				path = vfs.getPath(String.format("seriesInfo/%s.txt", scrubFileName(progId)));
 			}
-			
-			JSONObject obj = null;
 			
 			if(Files.exists(path)) {
 				try(InputStream ins = Files.newInputStream(path)) {
 					String data = IOUtils.toString(ins, ZIP_CHARSET.toString());
 					if(data != null) {
+						JSONObject obj;
 						try {
 							obj = Config.get().getObjectMapper().readValue(data, JSONObject.class);
 						} catch(JsonParseException e) {

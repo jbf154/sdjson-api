@@ -273,9 +273,6 @@ public class Airing {
 			timeApproximate = src.optBoolean("timeApproximate");
 			if(subtitled && src.has("subtitledLanguage"))
 				subtitleLanguage = src.getString("subtitledLanguage");
-			/*sap = src.optBoolean("sap");
-			if(sap && src.has("sapLanguage"))
-				sapLanguage = src.getString("sapLanguage");*/
 			cableInTheClassroom = src.optBoolean("cableInTheClassroom");
 			subjectToBlackout = src.optBoolean("subjectToBlackout");
 			educational = src.optBoolean("educational");

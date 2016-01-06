@@ -181,7 +181,7 @@ public abstract class EpgClient {
 	abstract protected Program fetchProgram(final String progId) throws IOException;
 	
 	/**
-	 * Fetch a single Artwork object
+	 * Fetches artwork for a single program
 	 * @param progId The program id to fetch artwork for
 	 * @return The Artwork instance for the given program id or null if unavailable
 	 * @throws IOException Thrown on any IO error accessing the data

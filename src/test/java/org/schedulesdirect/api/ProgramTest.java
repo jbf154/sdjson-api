@@ -221,4 +221,15 @@ public class ProgramTest extends SdjsonTestSuite {
 		assertEquals(1, p.getGenres().length);
 		assertEquals("Special", p.getGenres()[0]);
 	}
+	
+	@Test
+	public void validateKeywords() throws Exception {
+		JSONObject src = getRandomSampleProgram();
+		JSONObject keywords = new JSONObject();
+		keywords.put("General", new JSONArray(new String[] {"General1", "General2"}));
+		src.put("keywords", keywords);
+		Program p = new Program(src, CLNT);
+		assertTrue(p.getKeywords().containsKey("General"));
+		assertEquals(2, p.getKeywords().get("General").size());
+	}
 }

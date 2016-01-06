@@ -18,6 +18,9 @@ package org.schedulesdirect.api;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -425,8 +428,35 @@ public class NetworkEpgClient extends EpgClient {
 	
 	@Override
 	protected Artwork[] fetchArtwork(String progId) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		String artProgId = progId;
+		if(artProgId.length() > 10) {
+			artProgId = artProgId.substring(0, 10);
+		}
+		
+		List<Artwork> aList = new ArrayList<>();
+		
+		JSONArray req = new JSONArray();
+		req.put(artProgId);
+		
+		JSONArray resp = Config.get().getObjectMapper().readValue(factory.get(DefaultJsonRequest.Action.POST, RestNouns.METADATA, getHash(), getUserAgent(), getBaseUrl()).submitForJson(req), JSONArray.class);
+		for(int i=0; i<resp.length(); i++) {
+			JSONObject o = resp.getJSONObject(i);
+			if(!JsonResponseUtils.isErrorResponse(o)) {
+				Object temp = o.get("data");
+				if(temp instanceof JSONArray) {
+					JSONArray artworkArr = o.getJSONArray("data");
+
+					for(int j=0; j<artworkArr.length(); j++) {
+						JSONObject awObj = artworkArr.getJSONObject(j);
+						aList.add(new Artwork(awObj, this));
+					}
+				}
+			} else {
+				throw new InvalidJsonObjectException("Error received for Program", o.toString(3));
+			}
+		}
+		
+		return aList.toArray(new Artwork[0]);
 	}
 
 	private void prefetch(JSONArray airings) throws IOException {
